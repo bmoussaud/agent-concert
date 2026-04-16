@@ -18,6 +18,9 @@ param aiProjectDescription string = ''
 @description('Principal ID of the user-assigned managed identity for role assignments')
 param managedIdentityPrincipalId string
 
+@description('Application Insights name to connect to the project')
+param applicationInsightsName string
+
 // Azure AI User role definition
 var azureAIUserRoleDefinitionId = subscriptionResourceId(
   'Microsoft.Authorization/roleDefinitions',
@@ -34,6 +37,10 @@ resource aiFoundry 'Microsoft.CognitiveServices/accounts@2025-12-01' existing = 
   name: aiFoundryName
 }
 
+resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = {
+  name: applicationInsightsName
+}
+
 resource project 'Microsoft.CognitiveServices/accounts/projects@2025-12-01' = {
   parent: aiFoundry
   name: aiProjectName
@@ -44,6 +51,22 @@ resource project 'Microsoft.CognitiveServices/accounts/projects@2025-12-01' = {
   }
   identity: {
     type: 'SystemAssigned'
+  }
+
+  resource connectionAppInsight 'connections' = {
+    name: 'appinsights-connection'
+    properties: {
+      category: 'AppInsights'
+      target: applicationInsights.id
+      authType: 'ApiKey'
+      credentials: {
+        key: applicationInsights.properties.ConnectionString
+      }
+      metadata: {
+        ApiType: 'Azure'
+        ResourceId: applicationInsights.id
+      }
+    }
   }
 }
 

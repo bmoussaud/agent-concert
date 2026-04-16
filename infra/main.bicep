@@ -17,11 +17,12 @@ param apimPublisherEmail string
 
 @description('Publisher name for API Management.')
 param apimPublisherName string
+var projectPrefix = 'agent-concert'
 
 @description('Tags to apply to all resources.')
 param tags object = {}
 
-var resourceToken = toLower(uniqueString(resourceGroup().id, environmentName, location))
+var resourceToken = toLower(uniqueString(resourceGroup().id, environmentName, projectPrefix, location))
 
 var allTags = union(tags, {
   'azd-env-name': environmentName
@@ -31,7 +32,7 @@ var allTags = union(tags, {
 module managedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.5.0' = {
   name: 'managedIdentityDeployment'
   params: {
-    name: 'mi-${resourceToken}'
+    name: 'mi-${projectPrefix}${resourceToken}'
     location: location
     tags: allTags
   }
@@ -48,12 +49,12 @@ module logAnalyticsWorkspace 'br/public:avm/res/operational-insights/workspace:0
 }
 
 // Deploy Application Insights using Azure Verified Module
-module applicationInsights 'br/public:avm/res/insights/component:0.7.0' = {
-  name: 'applicationInsightsDeployment'
+module applicationInsights 'br/public:avm/res/insights/component:0.7.1' = {
+  name: 'application-insights'
   params: {
     name: 'app-insights-${resourceToken}'
     location: location
-    tags: allTags
+    tags: tags
     workspaceResourceId: logAnalyticsWorkspace.outputs.resourceId
   }
 }
@@ -62,15 +63,18 @@ module applicationInsights 'br/public:avm/res/insights/component:0.7.0' = {
 module aiFoundry 'br/public:avm/res/cognitive-services/account:0.14.2' = {
   name: 'aiFoundryDeployment'
   params: {
-    name: 'foundry-${resourceToken}'
+    name: 'foundry-${projectPrefix}-${resourceToken}'
     kind: 'AIServices'
     location: aiFoundryLocation
     tags: allTags
-    customSubDomainName: 'foundry-${resourceToken}'
+    customSubDomainName: 'foundry-${projectPrefix}-${resourceToken}'
     allowProjectManagement: true
     publicNetworkAccess: 'Enabled'
     managedIdentities: {
       systemAssigned: true
+      userAssignedResourceIds: [
+        managedIdentity.outputs.resourceId
+      ]
     }
     deployments: [
       {
@@ -89,28 +93,6 @@ module aiFoundry 'br/public:avm/res/cognitive-services/account:0.14.2' = {
   }
 }
 
-// Connect Application Insights to the AI Foundry account
-resource aiFoundryAccount 'Microsoft.CognitiveServices/accounts@2025-12-01' existing = {
-  name: aiFoundry.outputs.name
-}
-
-resource connectionAppInsight 'Microsoft.CognitiveServices/accounts/connections@2025-12-01' = {
-  parent: aiFoundryAccount
-  name: 'appinsights-connection'
-  properties: {
-    category: 'AppInsights'
-    target: applicationInsights.outputs.resourceId
-    authType: 'ApiKey'
-    credentials: {
-      key: applicationInsights.outputs.connectionString
-    }
-    metadata: {
-      ApiType: 'Azure'
-      ResourceId: applicationInsights.outputs.resourceId
-    }
-  }
-}
-
 // Deploy AI Foundry Project
 module aiFoundryProject 'modules/ai-foundry-project.bicep' = {
   name: 'aiFoundryProjectDeployment'
@@ -118,8 +100,9 @@ module aiFoundryProject 'modules/ai-foundry-project.bicep' = {
     location: aiFoundryLocation
     aiFoundryName: aiFoundry.outputs.name
     aiProjectName: 'project-${environmentName}'
-    aiProjectFriendlyName: 'Content Understanding Project - ${environmentName}'
-    aiProjectDescription: 'AI Foundry project for content understanding.'
+    aiProjectFriendlyName: '${projectPrefix} Project - ${environmentName}'
+    aiProjectDescription: 'AI Foundry project for ${projectPrefix}.'
+    applicationInsightsName: applicationInsights.outputs.name
     managedIdentityPrincipalId: managedIdentity.outputs.principalId
   }
 }
