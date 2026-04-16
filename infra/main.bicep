@@ -17,6 +17,11 @@ param apimPublisherEmail string
 
 @description('Publisher name for API Management.')
 param apimPublisherName string
+
+@description('setlist.fm API key for accessing the setlist.fm API.')
+@secure()
+param setlistfmApiKey string
+
 var projectPrefix = 'agent-concert'
 
 @description('Tags to apply to all resources.')
@@ -126,6 +131,16 @@ module apim 'br/public:avm/res/api-management/service:0.14.1' = {
   }
 }
 
+// Configure setlist.fm API in APIM
+module setlistfmApi 'modules/apim-setlistfm-api.bicep' = {
+  name: 'setlistfmApiDeployment'
+  params: {
+    apimName: apim.outputs.name
+    setlistfmApiKey: setlistfmApiKey
+    apiPath: 'setlistfm'
+  }
+}
+
 output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = applicationInsights.outputs.connectionString
@@ -136,3 +151,6 @@ output AZURE_MANAGED_IDENTITY_CLIENT_ID string = managedIdentity.outputs.clientI
 output AZURE_MANAGED_IDENTITY_NAME string = managedIdentity.outputs.name
 output AZURE_APIM_NAME string = apim.outputs.name
 output AZURE_APIM_GATEWAY_URL string = 'https://${apim.outputs.name}.azure-api.net'
+output AZURE_SETLISTFM_API_NAME string = setlistfmApi.outputs.apiName
+output AZURE_SETLISTFM_API_PATH string = 'https://${apim.outputs.name}.azure-api.net/setlistfm'
+output AZURE_SETLISTFM_SUBSCRIPTION_NAME string = setlistfmApi.outputs.subscriptionDisplayName
