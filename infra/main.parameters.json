@@ -10,6 +10,12 @@
     },
     "aiFoundryLocation": {
       "value": "${AZURE_AI_FOUNDRY_LOCATION}"
+    },
+    "apimPublisherEmail": {
+      "value": "${AZURE_APIM_PUBLISHER_EMAIL}"
+    },
+    "apimPublisherName": {
+      "value": "${AZURE_APIM_PUBLISHER_NAME}"
     }
   }
 }
