@@ -12,6 +12,12 @@ param location string
 @description('Location for AI Foundry resources.')
 param aiFoundryLocation string = location
 
+@description('Publisher email address for API Management.')
+param apimPublisherEmail string
+
+@description('Publisher name for API Management.')
+param apimPublisherName string
+
 @description('Tags to apply to all resources.')
 param tags object = {}
 
@@ -118,6 +124,25 @@ module aiFoundryProject 'modules/ai-foundry-project.bicep' = {
   }
 }
 
+// Deploy API Management using Azure Verified Module
+module apim 'br/public:avm/res/api-management/service:0.14.1' = {
+  name: 'apimDeployment'
+  params: {
+    name: 'apim-${resourceToken}'
+    location: location
+    tags: allTags
+    publisherEmail: apimPublisherEmail
+    publisherName: apimPublisherName
+    sku: 'Consumption'
+    diagnosticSettings: [
+      {
+        workspaceResourceId: logAnalyticsWorkspace.outputs.resourceId
+        name: 'apimDiag'
+      }
+    ]
+  }
+}
+
 output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = applicationInsights.outputs.connectionString
@@ -126,3 +151,5 @@ output AZURE_AI_PROJECT_ENDPOINT string = aiFoundryProject.outputs.projectEndpoi
 output AZURE_AI_MODEL_DEPLOYMENT_NAME string = 'gpt-4.1-mini'
 output AZURE_MANAGED_IDENTITY_CLIENT_ID string = managedIdentity.outputs.clientId
 output AZURE_MANAGED_IDENTITY_NAME string = managedIdentity.outputs.name
+output AZURE_APIM_NAME string = apim.outputs.name
+output AZURE_APIM_GATEWAY_URL string = 'https://${apim.outputs.name}.azure-api.net'
