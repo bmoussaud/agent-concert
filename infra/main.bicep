@@ -109,6 +109,7 @@ module aiFoundryProject 'modules/ai-foundry-project.bicep' = {
     aiProjectDescription: 'AI Foundry project for ${projectPrefix}.'
     applicationInsightsName: applicationInsights.outputs.name
     managedIdentityPrincipalId: managedIdentity.outputs.principalId
+    setlistfmMcpUrl: 'https://${apim.outputs.name}.azure-api.net/setlistfm-mcp'
   }
 }
 
