@@ -6,3 +6,39 @@ infra:
   provider: bicep
   path: infra
   module: main
+
+hooks:
+  postprovision:
+    posix:
+      shell: sh
+      run: ./scripts/get-apim-subscription-key.sh
+      continueOnError: false
+      interactive: true
+    windows:
+      shell: pwsh
+      run: |
+        Write-Host "Retrieving APIM subscription key..."
+        $apimName = (azd env get-values | Select-String "AZURE_APIM_NAME" | ForEach-Object { $_ -replace 'AZURE_APIM_NAME=', '' -replace '"', '' })
+        $resourceGroup = (azd env get-values | Select-String "AZURE_RESOURCE_GROUP" | ForEach-Object { $_ -replace 'AZURE_RESOURCE_GROUP=', '' -replace '"', '' })
+        $subscriptionName = "setlistfm-api-subscription"
+        
+        if (-not $apimName -or -not $resourceGroup) {
+          Write-Error "Could not retrieve APIM_NAME or RESOURCE_GROUP from azd environment"
+          exit 1
+        }
+        
+        Write-Host "APIM Instance: $apimName"
+        Write-Host "Resource Group: $resourceGroup"
+        Write-Host "Subscription: $subscriptionName"
+        
+        $subscriptionKey = az apim subscription show --resource-group $resourceGroup --service-name $apimName --subscription-id $subscriptionName --query "primaryKey" --output tsv
+        
+        if (-not $subscriptionKey) {
+          Write-Error "Could not retrieve subscription key"
+          exit 1
+        }
+        
+        azd env set AZURE_SETLISTFM_SUBSCRIPTION_KEY $subscriptionKey
+        Write-Host "✅ Subscription key successfully stored in azd environment as AZURE_SETLISTFM_SUBSCRIPTION_KEY"
+      continueOnError: false
+      interactive: true

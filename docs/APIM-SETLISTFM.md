@@ -1,15 +1,30 @@
 # setlist.fm API Configuration for APIM
 
-This module configures Azure API Management (APIM) to expose the setlist.fm API with proper authentication and subscription management.
+This configuration uses **Azure Verified Modules (AVM)** to expose the setlist.fm API through Azure API Management (APIM) with proper authentication and subscription management.
 
 ## Architecture
 
-The configuration includes:
+The configuration includes (all managed via AVM):
 
 1. **APIM Named Value**: Securely stores the setlist.fm API key
 2. **API Definition**: Imported from the OpenAPI specification at `openapi/openapi-setlistfm.json`
-3. **API Policy**: Automatically injects the `x-api-key` header into backend requests
+3. **API Policy**: Loaded from `infra/policies/setlistfm-api-policy.xml` - automatically injects the `x-api-key` header into backend requests
 4. **Dedicated Subscription**: Named `setlistfm-api` for access control
+
+## File Structure
+
+```
+infra/
+├── main.bicep                              # Main infrastructure with APIM config
+├── policies/
+│   └── setlistfm-api-policy.xml           # APIM policy for setlist.fm API
+openapi/
+└── openapi-setlistfm.json                 # OpenAPI specification
+```
+
+## Implementation
+
+The setlist.fm API is configured directly in the APIM module deployment in [infra/main.bicep](../infra/main.bicep) using AVM's `apis`, `namedValues`, and `subscriptions` parameters. The API policy is loaded from an external XML file for better maintainability.
 
 ## Setup
 
@@ -83,7 +98,7 @@ See the [OpenAPI specification](../openapi/openapi-setlistfm.json) for complete 
 
 ### Backend Authentication
 
-The APIM policy automatically injects the setlist.fm API key into backend requests:
+The APIM policy (defined in [infra/policies/setlistfm-api-policy.xml](../infra/policies/setlistfm-api-policy.xml)) automatically injects the setlist.fm API key into backend requests:
 
 ```xml
 <set-header name="x-api-key" exists-action="override">
@@ -124,7 +139,22 @@ AZURE_SETLISTFM_SUBSCRIPTION_NAME # Subscription display name
 3. Find the `setlistfm-api` subscription
 4. Click **Show/hide keys** to view the subscription keys
 
-### Using Azure CLI
+### Using Azure Developer CLI
+
+After running `azd provision`, the subscription key is automatically retrieved and stored in your environment as `AZURE_SETLISTFM_SUBSCRIPTION_KEY`:
+
+```bash
+# The key is automatically set by the post-provision hook
+# You can retrieve it with:
+azd env get-values | grep AZURE_SETLISTFM_SUBSCRIPTION_KEY
+
+# Or export it to your shell:
+export AZURE_SETLISTFM_SUBSCRIPTION_KEY=$(azd env get-values | grep AZURE_SETLISTFM_SUBSCRIPTION_KEY | cut -d'=' -f2)
+```
+
+The retrieval is handled by [scripts/get-apim-subscription-key.sh](../scripts/get-apim-subscription-key.sh), which runs automatically after each `azd provision` via a post-provision hook.
+
+### Using Azure CLI (Manual)
 
 ```bash
 # Get the APIM instance name
@@ -150,9 +180,9 @@ az apim subscription show \
 ## Example Request
 
 ```bash
-# Set variables
-APIM_URL=$(azd env get-values | grep AZURE_SETLISTFM_API_PATH | cut -d'=' -f2)
-SUBSCRIPTION_KEY="<your-subscription-key>"
+# Set variables from azd environment (automatically populated after azd provision)
+APIM_URL=$(azd env get-values | grep AZURE_SETLISTFM_API_PATH | cut -d'=' -f2 | tr -d '"')
+SUBSCRIPTION_KEY=$(azd env get-values | grep AZURE_SETLISTFM_SUBSCRIPTION_KEY | cut -d'=' -f2 | tr -d '"')
 
 # Search for artists
 curl -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
@@ -161,6 +191,15 @@ curl -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
 # Get setlists for an artist
 curl -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
   "$APIM_URL/1.0/artist/b10bbbfc-cf9e-42e0-be17-e2c3e1d2600d/setlists"
+```
+
+### Quick Test
+
+After running `azd provision`, you can immediately test the API with:
+
+```bash
+curl -H "Ocp-Apim-Subscription-Key: $(azd env get-values | grep AZURE_SETLISTFM_SUBSCRIPTION_KEY | cut -d'=' -f2 | tr -d '"')" \
+  "$(azd env get-values | grep AZURE_SETLISTFM_API_PATH | cut -d'=' -f2 | tr -d '"')/1.0/search/artists?artistName=Beatles"
 ```
 
 ## Troubleshooting

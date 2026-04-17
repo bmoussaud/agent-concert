@@ -116,28 +116,91 @@ module aiFoundryProject 'modules/ai-foundry-project.bicep' = {
 module apim 'br/public:avm/res/api-management/service:0.14.1' = {
   name: 'apimDeployment'
   params: {
-    name: 'apim-${resourceToken}'
+    name: 'apim-${projectPrefix}-${resourceToken}'
     location: location
     tags: allTags
     publisherEmail: apimPublisherEmail
     publisherName: apimPublisherName
-    sku: 'Consumption'
+    sku: 'BasicV2'
     diagnosticSettings: [
       {
         workspaceResourceId: logAnalyticsWorkspace.outputs.resourceId
         name: 'apimDiag'
       }
     ]
+    
+    // Named Values: Store the setlist.fm API key
+    namedValues: [
+      {
+        name: 'setlistfm-api-key'
+        displayName: 'setlistfm-api-key'
+        secret: true
+        value: setlistfmApiKey
+        tags: [
+          'setlistfm'
+          'api-key'
+        ]
+      }
+    ]
+    
+    // APIs: Import setlist.fm API from OpenAPI spec with policy
+    apis: [
+      {
+        name: 'setlistfm-api'
+        displayName: 'setlist.fm API'
+        description: 'Access to setlist.fm API for concert setlist data'
+        path: 'setlistfm'
+        protocols: [
+          'https'
+        ]
+        subscriptionRequired: true
+        type: 'http'
+        format: 'swagger-link-json'
+        value: 'https://api.setlist.fm/docs/1.0/ui/swagger.json'
+        serviceUrl: 'https://api.setlist.fm/rest'
+        policies: [
+          {
+            value: loadTextContent('policies/setlistfm-api-policy.xml')
+            format: 'xml'
+          }
+        ]
+      }
+    ]
+    
+    // Subscriptions: Create dedicated subscription for setlist.fm API
+    subscriptions: [
+      {
+        name: 'setlistfm-api-subscription'
+        displayName: 'setlistfm-api'
+        scope: '/apis/setlistfm-api'
+        allowTracing: true
+      }
+    ]
   }
 }
 
-// Configure setlist.fm API in APIM
-module setlistfmApi 'modules/apim-setlistfm-api.bicep' = {
-  name: 'setlistfmApiDeployment'
+module setlistFmMCP 'modules/mcp-api.bicep' =  {
+  name: 'setlistfm-mcp'
   params: {
     apimName: apim.outputs.name
-    setlistfmApiKey: setlistfmApiKey
-    apiPath: 'setlistfm'
+    apiName: 'setlistfm-api'
+    mcp:  {
+      name: 'setlistfm-mcp'
+      description: 'Setlist.fm MCP for concert details'
+      displayName: 'Setlist.fm MCP'
+      path: 'setlistfm-mcp'
+      policyXml: loadTextContent('policies/setlistfm-mcp-policy.xml')
+      tools :[
+          {
+            name:'searchForArtists'
+            operationName:'resource__1-0_search_artists_getArtists_GET'
+          }
+          {
+            name:'searchForSetlists'
+            operationName:'resource__1-0_search_setlists_getSetlists_GET'
+          }
+        ]
+    }
   }
 }
 
@@ -151,6 +214,7 @@ output AZURE_MANAGED_IDENTITY_CLIENT_ID string = managedIdentity.outputs.clientI
 output AZURE_MANAGED_IDENTITY_NAME string = managedIdentity.outputs.name
 output AZURE_APIM_NAME string = apim.outputs.name
 output AZURE_APIM_GATEWAY_URL string = 'https://${apim.outputs.name}.azure-api.net'
-output AZURE_SETLISTFM_API_NAME string = setlistfmApi.outputs.apiName
+output AZURE_SETLISTFM_API_NAME string = 'setlistfm-api'
 output AZURE_SETLISTFM_API_PATH string = 'https://${apim.outputs.name}.azure-api.net/setlistfm'
-output AZURE_SETLISTFM_SUBSCRIPTION_NAME string = setlistfmApi.outputs.subscriptionDisplayName
+output AZURE_SETLISTFM_SUBSCRIPTION_NAME string = 'setlistfm-api'
+output AZURE_TENANT_ID string = subscription().tenantId
