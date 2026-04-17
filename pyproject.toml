@@ -1,0 +1,20 @@
+[project]
+name = "agent-concert"
+version = "0.1.0"
+description = "Azure AI Foundry Agent for concert information using setlist.fm API"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # Azure AI Projects and Agents
+    "azure-ai-projects>=2.0.0",
+    # Configuration management
+    "python-dotenv>=1.0.1",
+    # HTTP server
+    "aiohttp>=3.9.0",
+]
+
+[tool.uv.pip]
+# Allow pre-release versions for beta packages
+prerelease = "allow"
+
+

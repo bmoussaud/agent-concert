@@ -1,0 +1,95 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Install Dependencies",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "sync"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Run Agent",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "src/agent.py"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Agent (agentdev CLI)",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "python",
+        "-m",
+        "agent_dev_cli",
+        "run",
+        "--port",
+        "8088"
+      ],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Test Agent (curl)",
+      "type": "shell",
+      "command": "curl",
+      "args": [
+        "-X",
+        "POST",
+        "http://localhost:8088/responses",
+        "-H",
+        "Content-Type: application/json",
+        "-d",
+        "{\"input\": \"Tell me about concert setlists\"}"
+      ],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Docker Image",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "build",
+        "--platform",
+        "linux/amd64",
+        "-t",
+        "agent-concert:latest",
+        "."
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

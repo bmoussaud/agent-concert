@@ -213,3 +213,4 @@ infra/**/*.json
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+build-source-*.tar.gz
