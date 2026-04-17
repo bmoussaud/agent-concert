@@ -90,23 +90,23 @@ accurate, up-to-date information.
         return {'agent_name': agent.name, 'agent_version': agent.version}
    
     
-def run_agent_conversation(project_client: AIProjectClient, agent_name: str, agent_version: str, user_message: str):
+def run_agent_conversation(project_client: AIProjectClient, agent_name: str, agent_version: str, history: list[dict]):
     """
     Run a conversation with the agent.
-    
+
     Args:
         project_client: AIProjectClient instance
         agent_name: Agent name
         agent_version: Agent version
-        user_message: User's message
-        
+        history: Full conversation history as a list of {"role": ..., "content": ...} dicts
+
     Returns:
         Response object from the OpenAI Responses API (contains output_text and output items)
     """
 
     with project_client.get_openai_client() as openai_client:
         response = openai_client.responses.create(
-            input=[{"role": "user", "content": user_message}],
+            input=history,
             extra_body={"agent_reference": {"name": agent_name, "version": agent_version, "type": "agent_reference"}},
         )
 
@@ -169,7 +169,7 @@ async def main():
             logger.info("Running smoke test...")
             user_message = "Can you provide details about recent concerts and setlists in 2026 performed by the band Eiffel?"
             logger.info(f"User message: {user_message}")
-            test_response = run_agent_conversation(project_client=client, agent_name=agent_name, agent_version=agent_version, user_message=user_message)
+            test_response = run_agent_conversation(project_client=client, agent_name=agent_name, agent_version=agent_version, history=[{"role": "user", "content": user_message}])
             logger.info(f"Test {test_response.output_text}")
 
         # Create HTTP routes
@@ -194,11 +194,11 @@ async def main():
                 
                 logger.info(f"Received request: {user_input}")
                 
-                # Run agent conversation
+                # Run agent conversation (stateless: single-turn history)
                 response = run_agent_conversation(client,
                     agent_name=app['agent_name'],
                     agent_version=app['agent_version'],
-                    user_message=user_input
+                    history=[{"role": "user", "content": user_input}]
                 )
                 response_text = response.output_text
                 

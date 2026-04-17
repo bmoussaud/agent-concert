@@ -1,77 +1,98 @@
 # agent-concert
 
-An Azure AI Foundry agent that provides concert information using the setlist.fm API through Azure API Management.
+**agent-concert** is a conversational AI agent specialized in concerts and live music. It lets you search for artists, explore past setlists, and discover touring history — powered by the [setlist.fm](https://www.setlist.fm/) database.
 
-## Overview
-
-This agent uses the Microsoft Agent Framework with Azure AI Foundry to help users discover:
-- Concert setlists and performance details
-- Artist and band information
-- Touring history and upcoming shows
+The agent is built with Azure AI Foundry (GPT-4.1) and accesses setlist.fm through an MCP (Model Context Protocol) server exposed via Azure API Management.
 
 ## Architecture
 
-- **SDK**: Azure AI Projects (`azure-ai-projects`) — `AIProjectClient` + `PromptAgentDefinition`
-- **AI Platform**: Azure AI Foundry
-- **Model**: GPT-4.1-mini (deployed via Azure AI Foundry)
-- **HTTP Server**: aiohttp server (port 8088)
-- **API Gateway**: Azure API Management (for setlist.fm API)
-- **Package Manager**: uv (fast Python dependency management)
-- **Authentication**: Azure DefaultAzureCredential (Managed Identity in production)
+| Component | Technology |
+|---|---|
+| AI Platform | Azure AI Foundry (`azure-ai-projects`) |
+| Model | GPT-4.1 Azure AI Foundry |
+| Data source | setlist.fm API via Azure APIM (MCP server) |
+| Web UI | Chainlit (port 8080) |
+| HTTP API | aiohttp (port 8088) |
+| Auth | Azure `DefaultAzureCredential` / Managed Identity |
+| Package manager | [uv](https://github.com/astral-sh/uv) |
 
 ## Prerequisites
 
-- [uv](https://github.com/astral-sh/uv) (Python package manager)
-- Python 3.10 or higher
-- Azure CLI (`az login` for local development)
-- Azure AI Foundry project with deployed model
-- Azure API Management with setlist.fm API configured
+- Python 3.10+
+- [uv](https://github.com/astral-sh/uv) — `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- Azure CLI — `az login` for local authentication
+- An Azure deployment with AI Foundry + APIM (see [Deployment](#deployment-to-azure))
 
-## Installation
+## Quick Start
 
-This project uses [uv](https://github.com/astral-sh/uv) for fast, reliable Python dependency management.
+```bash
+# 1. Install dependencies
+uv sync
 
-1. **Install uv** (if not already installed):
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
+# 2. Configure environment
+cp .env.template .env
+# Fill in .env with values from: azd env get-values
 
-2. **Install dependencies from pyproject.toml**:
-   ```bash
-   uv sync
-   ```
+# 3. Authenticate with Azure
+az login
 
-3. **Configure environment variables**:
-   ```bash
-   cp .env.template .env
-   # Edit .env and fill in your Azure AI Foundry configuration
-   ```
+# 4a. Run the Chainlit web UI (recommended)
+uv run chainlit run src/app_chainlit.py --port 8080
+# Open http://localhost:8080 in your browser
 
-4. **Get values from your Azure deployment**:
-   ```bash
-   azd env get-values
-   # Copy AZURE_AI_PROJECT_ENDPOINT and AZURE_AI_MODEL_DEPLOYMENT_NAME to .env
-   ```
+# 4b. Or run the HTTP API server
+uv run src/agent.py
+# Test: curl -X POST http://localhost:8088/responses \
+#   -H "Content-Type: application/json" \
+#   -d '{"input": "Tell me about Radiohead setlists"}'
+```
 
 ## Running Locally
 
-1. **Authenticate with Azure**:
-   ```bash
-   az login
-   ```
+### Web UI (Chainlit)
 
-2. **Start the agent**:
-   ```bash
-   uv run src/agent.py
-   ```
+The recommended way to interact with the agent locally is via the Chainlit web interface:
 
-3. **Test the agent**:
-   The agent runs as an HTTP service on `http://localhost:8088`. Send a test request:
-   ```bash
-   curl -X POST http://localhost:8088/responses \
-     -H "Content-Type: application/json" \
-     -d '{"input": "Tell me about concert setlists"}'
-   ```
+```bash
+uv run chainlit run src/app_chainlit.py --port 8080
+```
+
+Open [http://localhost:8080](http://localhost:8080). The UI:
+- Maintains **conversation history** across turns (you can ask follow-up questions without repeating context)
+- Shows **MCP tool calls** (setlist.fm API lookups) as expandable steps
+
+### HTTP API (aiohttp)
+
+The agent also exposes a stateless REST API on port 8088:
+
+```bash
+uv run src/agent.py
+```
+
+Endpoints:
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/responses` | Send a message. Body: `{"input": "..."}` |
+| `GET` | `/health` | Health check. Returns `{"status": "healthy"}` |
+
+Example:
+```bash
+curl -X POST http://localhost:8088/responses \
+  -H "Content-Type: application/json" \
+  -d '{"input": "What songs did Iron Maiden play in Paris in 2023?"}'
+```
+
+### VS Code Tasks
+
+Convenience tasks are available via **Terminal → Run Task**:
+
+| Task | Description |
+|---|---|
+| Install Dependencies | `uv sync` |
+| Run Agent | HTTP API on port 8088 |
+| Run Chainlit UI | Web UI on port 8080 |
+| Test Agent (curl) | Quick curl test against the API |
 
 ## Deployment to Azure
 
@@ -110,141 +131,44 @@ docker push <your-acr>.azurecr.io/agent-concert:latest
 ```
 agent-concert/
 ├── src/
-│   └── agent.py              # Main agent implementation
-├── infra/                    # Bicep infrastructure code
-├── agent.yaml                # Agent deployment configuration
+│   ├── agent.py              # Core agent logic + aiohttp HTTP API (port 8088)
+│   └── app_chainlit.py       # Chainlit web UI (port 8080)
+├── infra/                    # Bicep infrastructure (Azure AI Foundry + APIM)
+├── .chainlit/
+│   └── config.toml           # Chainlit UI configuration
 ├── Dockerfile                # Container definition
-├── pyproject.toml            # Python dependencies and project config
-├── .env.template             # Environment variable template
-└── README.md                 # This file
+├── pyproject.toml            # Python dependencies
+├── azure.yaml                # AZD project configuration
+└── .env.template             # Environment variable template
 ```
 
 ## Environment Variables
 
 | Variable | Description | Required |
-|----------|-------------|----------|
+|---|---|---|
 | `AZURE_AI_PROJECT_ENDPOINT` | Azure AI Foundry project endpoint URL | Yes |
 | `AZURE_AI_MODEL_DEPLOYMENT_NAME` | Name of the deployed GPT model | Yes |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Application Insights for telemetry | No |
+| `AZURE_SETLISTFM_MCP_URL` | MCP server URL (setlist.fm via APIM) | Yes |
+| `AZURE_SETLISTFM_SUBSCRIPTION_KEY` | APIM subscription key | Yes |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Application Insights telemetry | No |
 
-## Development Notes
-
-### Dependency Management with uv
-
-This project uses [uv](https://github.com/astral-sh/uv) for fast, reliable Python package management. Benefits:
-
-- **10-100x faster** than pip for dependency resolution and installation
-- **Reliable** dependency resolution with proper conflict detection
-- **Compatible** with pip and existing tools
-
-All dependencies are declared in `pyproject.toml` and installed with `uv sync`.
-
-**Note**: We use a simplified dependency set without `azure-ai-agentserver-*` packages, which had version conflicts. Instead, we implement a custom HTTP server using `aiohttp`.
-
-### Dependencies
-
-All dependencies are declared in `pyproject.toml` and installed with `uv sync`:
-
-```toml
-[project]
-requires-python = ">=3.10"
-dependencies = [
-    # Azure AI Projects and Agents
-    "azure-ai-projects>=2.0.0",
-    # HTTP server
-    "aiohttp>=3.9.0",
-    # Configuration management
-    "python-dotenv>=1.0.1",
-]
-
-[tool.uv.pip]
-prerelease = "allow"
+All values can be retrieved after provisioning with:
+```bash
+azd env get-values
 ```
-
-### Authentication
-
-- **Local development**: Uses `DefaultAzureCredential` which picks up credentials from `az login`
-- **Production**: Uses Managed Identity automatically when deployed to Azure
-
-### How the Agent Works
-
-On startup, the agent:
-
-1. Creates an `AIProjectClient` using `DefaultAzureCredential` and the configured project endpoint.
-2. Registers a versioned agent definition via `project_client.agents.create_version()` using `PromptAgentDefinition` (model + instructions).
-3. Starts the aiohttp HTTP server on port 8088.
-
-For each incoming request, the handler calls `openai_client.responses.create()` with an `agent_reference` pointing to the registered agent name and version, then returns the response text.
-
-### HTTP Server
-
-The agent implements a custom HTTP server using `aiohttp` that exposes an API compatible with the Foundry Responses format:
-
-- **POST /responses** - Send requests to the agent
-  - Request: `{"input": "your message here"}`
-  - Response: `{"id": "response", "object": "response", "content": "...", "status": "completed"}`
-- **GET /health** - Health check endpoint (returns `{"status": "healthy"}`)
-- **GET /** - Root endpoint (also returns health status)
-
-The server runs on `0.0.0.0:8088` by default, making it accessible from any network interface.
 
 ## Troubleshooting
 
-### Import Errors
-If you see import errors for `azure.ai.projects`, ensure dependencies are installed:
-```bash
-uv sync
-```
-
-### Missing aiohttp Module
-If you see `ModuleNotFoundError: No module named 'aiohttp'`, this dependency is required for the HTTP server. Run:
-```bash
-uv sync
-```
-
-### Authentication Errors
-- **Locally**: Run `az login` first
-- **In Azure**: Ensure the managed identity has proper RBAC roles on the AI Foundry project
-
-### Connection Errors
-Verify the `AZURE_AI_PROJECT_ENDPOINT` environment variable is set correctly in your `.env` file.
-
-### Port Already in Use
-If port 8088 is already in use, stop the existing process:
-```bash
-# Find the process using port 8088
-lsof -i :8088
-# Kill the process (replace PID with actual process ID)
-kill -9 <PID>
-```
+| Problem | Fix |
+|---|---|
+| Import errors | `uv sync` |
+| Authentication errors | `az login` (local), check Managed Identity RBAC (Azure) |
+| Port in use | `lsof -ti :8088 \| xargs kill -9` |
+| Missing env vars | `azd env get-values` then update `.env` |
 
 ## Resources
 
-- [Microsoft Agent Framework Documentation](https://learn.microsoft.com/azure/ai-foundry/agents/)
-- [Azure AI Foundry](https://learn.microsoft.com/azure/ai-foundry/)
-- [Hosted Agents Concepts](https://learn.microsoft.com/azure/ai-foundry/agents/concepts/hosted-agents)
+- [Azure AI Foundry Agents](https://learn.microsoft.com/azure/ai-foundry/agents/)
+- [setlist.fm API](https://api.setlist.fm/docs/1.0/index.html)
+- [Chainlit Documentation](https://docs.chainlit.io/)
 - [uv Package Manager](https://github.com/astral-sh/uv)
-- [aiohttp Documentation](https://docs.aiohttp.org/)
-
-## Quick Start Commands
-
-```bash
-# Install uv (first time only)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install dependencies
-uv sync
-
-# Configure environment
-cp .env.template .env
-# Edit .env with your Azure AI Foundry values
-
-# Run locally
-az login
-uv run src/agent.py
-
-# Test the agent
-curl -X POST http://localhost:8088/responses \
-  -H "Content-Type: application/json" \
-  -d '{"input": "Tell me about Coldplay concerts"}'
-```

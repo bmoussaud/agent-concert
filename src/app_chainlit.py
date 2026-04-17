@@ -53,6 +53,7 @@ async def on_chat_start():
         cl.user_session.set("client", client)
         cl.user_session.set("agent_name", agent_info["agent_name"])
         cl.user_session.set("agent_version", agent_info["agent_version"])
+        cl.user_session.set("history", [])
 
         await cl.Message(
             content="👋 Hi! I'm **agent-concert**, your concert setlist assistant.\n\n"
@@ -78,13 +79,17 @@ async def on_message(message: cl.Message):
         ).send()
         return
 
+    # Accumulate conversation history
+    history: list[dict] = cl.user_session.get("history") or []
+    history.append({"role": "user", "content": message.content})
+
     # Call the (synchronous) agent in a thread to avoid blocking the event loop
     response = await asyncio.to_thread(
         run_agent_conversation,
         client,
         agent_name,
         agent_version,
-        message.content,
+        history,
     )
 
     # Display MCP tool calls as Chainlit steps
@@ -105,6 +110,10 @@ async def on_message(message: cl.Message):
                 # Attach result to the last open step if possible
                 async with cl.Step(name="📦 Tool result", type="tool") as step:
                     step.output = output_value
+
+    # Persist updated history (append assistant turn)
+    history.append({"role": "assistant", "content": response.output_text})
+    cl.user_session.set("history", history)
 
     # Send the final text response
     await cl.Message(content=response.output_text).send()
