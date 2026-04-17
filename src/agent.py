@@ -90,7 +90,7 @@ accurate, up-to-date information.
         return {'agent_name': agent.name, 'agent_version': agent.version}
    
     
-def run_agent_conversation(project_client: AIProjectClient, agent_name: str, agent_version: str, user_message: str) -> str:
+def run_agent_conversation(project_client: AIProjectClient, agent_name: str, agent_version: str, user_message: str):
     """
     Run a conversation with the agent.
     
@@ -101,7 +101,7 @@ def run_agent_conversation(project_client: AIProjectClient, agent_name: str, age
         user_message: User's message
         
     Returns:
-        str: Agent's response
+        Response object from the OpenAI Responses API (contains output_text and output items)
     """
 
     with project_client.get_openai_client() as openai_client:
@@ -110,9 +110,8 @@ def run_agent_conversation(project_client: AIProjectClient, agent_name: str, age
             extra_body={"agent_reference": {"name": agent_name, "version": agent_version, "type": "agent_reference"}},
         )
 
-        logger.info(f"XXXX {response}")
         logger.info(f"Run completed with status: {response.status}")
-        return response.output_text
+        return response
 
 
 def project_client(project_endpoint: str) -> AIProjectClient:
@@ -170,8 +169,8 @@ async def main():
             logger.info("Running smoke test...")
             user_message = "Can you provide details about recent concerts and setlists in 2026 performed by the band Eiffel?"
             logger.info(f"User message: {user_message}")
-            test_str = run_agent_conversation(project_client=client, agent_name=agent_name, agent_version=agent_version, user_message=user_message)
-            logger.info(f"Test {test_str}")
+            test_response = run_agent_conversation(project_client=client, agent_name=agent_name, agent_version=agent_version, user_message=user_message)
+            logger.info(f"Test {test_response.output_text}")
 
         # Create HTTP routes
         app = web.Application()
@@ -196,11 +195,12 @@ async def main():
                 logger.info(f"Received request: {user_input}")
                 
                 # Run agent conversation
-                response_text = run_agent_conversation(client,
+                response = run_agent_conversation(client,
                     agent_name=app['agent_name'],
                     agent_version=app['agent_version'],
                     user_message=user_input
                 )
+                response_text = response.output_text
                 
                 # Return response in OpenAI Responses API format
                 return web.json_response({

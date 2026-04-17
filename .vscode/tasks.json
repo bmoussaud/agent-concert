@@ -73,6 +73,25 @@
       "problemMatcher": []
     },
     {
+      "label": "Run Chainlit UI",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "chainlit",
+        "run",
+        "src/app_chainlit.py",
+        "--port",
+        "8080"
+      ],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Build Docker Image",
       "type": "shell",
       "command": "docker",

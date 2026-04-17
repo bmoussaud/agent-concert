@@ -1,0 +1,16 @@
+[project]
+# Disable telemetry to Chainlit cloud
+enable_telemetry = false
+
+[UI]
+name = "agent-concert 🎸"
+description = "Concert setlist assistant powered by Azure AI Foundry and setlist.fm"
+default_collapse_content = true
+default_expanded_root_function_calls = true
+
+[UI.theme]
+default = "dark"
+
+[features]
+prompt_playground = false
+multi_modal = false
