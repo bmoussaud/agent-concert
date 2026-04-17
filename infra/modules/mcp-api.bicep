@@ -1,9 +1,8 @@
 @description('The name of the API Management instance. Defaults to "apim-<resourceSuffix>".')
 param apimName string
 
-
+@description('The name of the API Management API to reference.')
 param apiName string
-
 
 resource apimService 'Microsoft.ApiManagement/service@2024-06-01-preview' existing = {
   name: apimName
@@ -13,6 +12,7 @@ resource refApimApi 'Microsoft.ApiManagement/service/apis@2024-06-01-preview' ex
   name: apiName
   parent: apimService
 }
+
 
 param mcp object = {
   name: 'bicep-setlistfm-mcp'
@@ -71,3 +71,13 @@ resource apiPolicy 'Microsoft.ApiManagement/service/apis/policies@2024-06-01-pre
 output mcpName string = mcpApimApi.properties.displayName
 output mcpResourceId string = mcpApimApi.id
 output mcpPath string = mcpApimApi.properties.path
+output mcpUrl string = 'https://${apimService.name}.azure-api.net/${mcpApimApi.properties.path}/mcp'
+
+// Retrieve the APIM subscription primary key
+resource apimSubscription 'Microsoft.ApiManagement/service/subscriptions@2024-06-01-preview' existing = {
+  name: '${refApimApi.name}-subscription'
+  parent: apimService
+}
+
+#disable-next-line outputs-should-not-contain-secrets
+output refApiSubscriptionPrimaryKey string = apimSubscription.listSecrets().primaryKey

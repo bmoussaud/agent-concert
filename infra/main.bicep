@@ -83,10 +83,10 @@ module aiFoundry 'br/public:avm/res/cognitive-services/account:0.14.2' = {
     }
     deployments: [
       {
-        name: 'gpt-4.1-mini'
+        name: 'gpt-4.1'
         model: {
           format: 'OpenAI'
-          name: 'gpt-4.1-mini'
+          name: 'gpt-4.1'
           version: '2025-04-14'
         }
         sku: {
@@ -104,12 +104,13 @@ module aiFoundryProject 'modules/ai-foundry-project.bicep' = {
   params: {
     location: aiFoundryLocation
     aiFoundryName: aiFoundry.outputs.name
-    aiProjectName: 'project-${environmentName}'
+    aiProjectName: '${projectPrefix}-${environmentName}'
     aiProjectFriendlyName: '${projectPrefix} Project - ${environmentName}'
     aiProjectDescription: 'AI Foundry project for ${projectPrefix}.'
     applicationInsightsName: applicationInsights.outputs.name
     managedIdentityPrincipalId: managedIdentity.outputs.principalId
-    setlistfmMcpUrl: 'https://${apim.outputs.name}.azure-api.net/setlistfm-mcp'
+    setlistfmMcpUrl: setlistFmMCP.outputs.mcpUrl
+    setlistfmSubscriptionKey: setlistFmMCP.outputs.refApiSubscriptionPrimaryKey
   }
 }
 
@@ -218,4 +219,7 @@ output AZURE_APIM_GATEWAY_URL string = 'https://${apim.outputs.name}.azure-api.n
 output AZURE_SETLISTFM_API_NAME string = 'setlistfm-api'
 output AZURE_SETLISTFM_API_PATH string = 'https://${apim.outputs.name}.azure-api.net/setlistfm'
 output AZURE_SETLISTFM_SUBSCRIPTION_NAME string = 'setlistfm-api'
+#disable-next-line outputs-should-not-contain-secrets
+output AZURE_SETLISTFM_SUBSCRIPTION_KEY string = setlistFmMCP.outputs.refApiSubscriptionPrimaryKey
 output AZURE_TENANT_ID string = subscription().tenantId
+output AZURE_SETLISTFM_MCP_URL string = setlistFmMCP.outputs.mcpUrl

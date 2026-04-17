@@ -1,0 +1,19 @@
+{
+	"servers": {
+		"my-mcp-server-35918538": {
+			"url": "https://apim-agent-concert-dv6x6fsuttefa.azure-api.net/setlistfm-mcp/mcp",
+			"type": "http",
+			"headers": {
+				"Ocp-Apim-Subscription-Key": "${input:apimSubscriptionKey}"
+			}
+		}
+	},
+	"inputs": [
+		{
+			"id": "apimSubscriptionKey",
+			"type": "promptString",
+			"description": "APIM Subscription Key (AZURE_SETLISTFM_SUBSCRIPTION_KEY from .env)",
+			"password": true
+		}
+	]
+}

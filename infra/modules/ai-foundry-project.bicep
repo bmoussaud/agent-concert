@@ -24,6 +24,10 @@ param applicationInsightsName string
 @description('URL of the setlist.fm MCP server exposed through API Management (e.g. https://<apim-name>.azure-api.net/setlistfm-mcp)')
 param setlistfmMcpUrl string
 
+@secure()
+@description('APIM subscription primary key for the setlistfm-api subscription, used to authenticate MCP connection calls')
+param setlistfmSubscriptionKey string
+
 // Azure AI User role definition
 var azureAIUserRoleDefinitionId = subscriptionResourceId(
   'Microsoft.Authorization/roleDefinitions',
@@ -75,13 +79,20 @@ resource project 'Microsoft.CognitiveServices/accounts/projects@2025-12-01' = {
   resource connectionSetlistFmMcp 'connections' = {
     name: 'setlistfm-mcp-connection'
     properties: {
-      category: 'CustomKeys'
+      category: 'RemoteTool'
       target: setlistfmMcpUrl
-      authType: 'None'
-      metadata: {
-        ApiType: 'Other'
-        type: 'mcp'
+      authType: 'CustomKeys'
+      isSharedToAll: true
+      credentials: {
+        keys: {
+        'Ocp-Apim-Subscription-Key': setlistfmSubscriptionKey
+        }
       }
+      //metadata: {
+      //  ApiType: 'Other'
+      //  type: 'mcp'
+      //}
+      metadata: {type: 'custom_MCP'}
     }
   }
 }
@@ -125,3 +136,4 @@ resource managedIdentityIsCognitiveServicesUser 'Microsoft.Authorization/roleAss
 output projectName string = project.name
 output projectId string = project.id
 output projectEndpoint string = project.properties.endpoints['AI Foundry API']
+

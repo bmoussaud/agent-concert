@@ -10,7 +10,7 @@ import subprocess
 from dotenv import load_dotenv
 from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
-from azure.ai.projects.models import PromptAgentDefinition
+from azure.ai.projects.models import MCPTool, PromptAgentDefinition
 from aiohttp import web
 import logging
 
@@ -29,14 +29,24 @@ logger = logging.getLogger(__name__)
 AGENT_ID = None
 
 
-def get_or_create_agent(project_client: AIProjectClient, model_deployment: str) -> dict:
+def get_or_create_agent(project_client: AIProjectClient, model_deployment: str, setlistfm_mcp_url: str) -> dict:
     """
     Get existing agent or create a new one.
     
     Args:
         project_client: AIProjectClient instance
         model_deployment: Model deployment name
+        setlistfm_mcp_url: URL of the setlist.fm MCP server exposed through API Management
         
+    Returns:
+        dict: A dictionary containing the agent's name and version
+    """
+    # Define agent instructions
+    instructions = """
+You are agent-concert, an AI assistant specialized in providing information about concerts and musical performances.
+
+You have access to the setlist.fm API through Azure API Management, which allows you to:
+
     Returns:
         dict: A dictionary containing the agent's name and version
     """
@@ -55,12 +65,25 @@ and learn about artists' touring history. Always be friendly, informative, and m
 When users ask about concerts or artists, use your tools to search the setlist.fm database and provide
 accurate, up-to-date information.
 """
+    mcp_tool = MCPTool(
+        server_label="agent-mcp-setlistfm",
+        server_url=setlistfm_mcp_url,
+        require_approval="never",
+        headers={
+            "Ocp-Apim-Subscription-Key": str(os.getenv("AZURE_SETLISTFM_SUBSCRIPTION_KEY"))
+        },
+        project_connection_id="setlistfm-mcp-connection"
+    )
+    logger.info(f"Using MCP tool with server URL: {setlistfm_mcp_url}")
+    logger.info(f"MCP tool headers: {mcp_tool.headers}")
+
     with project_client.get_openai_client() as openai_client:
         agent = project_client.agents.create_version(
             agent_name="agent-concert",
             definition=PromptAgentDefinition(
                 model=model_deployment,
                 instructions=instructions,
+                tools=[mcp_tool],
             ),
         )
         logger.info(f"Created agent with ID: {agent.id}")
@@ -87,6 +110,7 @@ def run_agent_conversation(project_client: AIProjectClient, agent_name: str, age
             extra_body={"agent_reference": {"name": agent_name, "version": agent_version, "type": "agent_reference"}},
         )
 
+        logger.info(f"XXXX {response}")
         logger.info(f"Run completed with status: {response.status}")
         return response.output_text
 
@@ -125,13 +149,30 @@ async def main():
     try:
         # Initialize clients
         model_deployment = os.getenv("AZURE_AI_MODEL_DEPLOYMENT_NAME")
+        if model_deployment is None:
+            raise ValueError("AZURE_AI_MODEL_DEPLOYMENT_NAME environment variable is required")
+
+        setlistfm_mcp_url = os.getenv("AZURE_SETLISTFM_MCP_URL")
+        if setlistfm_mcp_url is None:
+            raise ValueError("AZURE_SETLISTFM_MCP_URL environment variable is required")
+        
+        if not os.getenv("AZURE_AI_PROJECT_ENDPOINT"):
+            raise ValueError("AZURE_AI_PROJECT_ENDPOINT environment variable is required")
+        
         client = project_client(project_endpoint=os.getenv("AZURE_AI_PROJECT_ENDPOINT"))
         
         # Create or get agent
-        agent_info = get_or_create_agent(client, model_deployment)
+        agent_info = get_or_create_agent(client, model_deployment, setlistfm_mcp_url)
         agent_name = agent_info['agent_name']
         agent_version = agent_info['agent_version']
-        
+
+        if os.getenv("SMOKE_TEST") is not None:
+            logger.info("Running smoke test...")
+            user_message = "Can you provide details about recent concerts and setlists in 2026 performed by the band Eiffel?"
+            logger.info(f"User message: {user_message}")
+            test_str = run_agent_conversation(project_client=client, agent_name=agent_name, agent_version=agent_version, user_message=user_message)
+            logger.info(f"Test {test_str}")
+
         # Create HTTP routes
         app = web.Application()
         

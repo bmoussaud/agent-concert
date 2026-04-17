@@ -7,11 +7,11 @@ infra:
   path: infra
   module: main
 
-hooks:
-  postprovision:
-    posix:
-      shell: sh
-      run: ./scripts/get-apim-subscription-key.sh
-      continueOnError: false
-      interactive: true
+# hooks:
+#   postprovision:
+#     posix:
+#       shell: sh
+#       run: ./scripts/get-apim-subscription-key.sh
+#       continueOnError: false
+#       interactive: true
     
