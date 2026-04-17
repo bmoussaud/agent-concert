@@ -24,12 +24,15 @@ async def read_prompts(directory: Path) -> AsyncIterator[str]:
 
 ## Dependency Management
 
+- don't use requirements.txt; use `uv` and `pyproject.toml` for all dependency management
+- Pin exact versions for production dependencies in `pyproject.toml`
 - **Use `uv` exclusively** for dependency management:
   - Add dependencies: `uv add <package>`
   - Run scripts: `uv run python script.py`
   - Sync environment: `uv sync`
 - **Never use `pip install` directly** in this project
 - Pin exact versions for production dependencies in `pyproject.toml`
+
 
 ## Azure SDK Patterns
 
