@@ -63,6 +63,8 @@ def post_mcp(payload: dict) -> dict:
         "Content-Length": str(len(body)),
     }
 
+    print(f"POST {MCP_URL} with payload: {json.dumps(payload)}")
+
     ctx = ssl.create_default_context()
     conn = http.client.HTTPSConnection(host, timeout=TIMEOUT, context=ctx)
     try:

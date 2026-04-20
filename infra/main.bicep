@@ -282,23 +282,25 @@ module spotifyMCP 'modules/mcp-api.bicep' = {
       policyXml: loadTextContent('policies/spotify-mcp-policy.xml')
       tools: [
         {
-          name: 'search'
+          // APIM auto-generates the tool name from the OpenAPI operation summary:
+          // "Search for Item" (operationId: search) → searchForItem
+          name: 'searchForItem'
           operationName: 'search'
         }
         {
-          name: 'getAnArtist'
+          name: 'getArtist'
           operationName: 'get-an-artist'
         }
         {
-          name: 'getAnArtistsTopTracks'
+          name: 'getArtistsTopTracks'
           operationName: 'get-an-artists-top-tracks'
         }
         {
-          name: 'getAnArtistsAlbums'
+          name: 'getArtistsAlbums'
           operationName: 'get-an-artists-albums'
         }
         {
-          name: 'getAnAlbum'
+          name: 'getAlbum'
           operationName: 'get-an-album'
         }
         {
@@ -312,6 +314,43 @@ module spotifyMCP 'modules/mcp-api.bicep' = {
         {
           name: 'getCurrentUsersPlaylists'
           operationName: 'get-a-list-of-current-users-playlists'
+        }
+        // Playlist CRUD
+        {
+          name: 'getPlaylist'
+          operationName: 'get-playlist'
+        }
+        {
+          name: 'getPlaylistItems'
+          operationName: 'get-playlists-items'
+        }
+        {
+          name: 'createPlaylist'
+          operationName: 'create-playlist'
+        }
+        {
+          name: 'changePlaylistDetails'
+          operationName: 'change-playlist-details'
+        }
+        {
+          name: 'addItemsToPlaylist'
+          operationName: 'add-items-to-playlist'
+        }
+        {
+          name: 'updatePlaylistItems'
+          operationName: 'reorder-or-replace-playlists-items'
+        }
+        {
+          name: 'removePlaylistItems'
+          operationName: 'remove-items-playlist'
+        }
+        {
+          name: 'getPlaylistCoverImage'
+          operationName: 'get-playlist-cover'
+        }
+        {
+          name: 'getUsersPlaylists'
+          operationName: 'get-list-users-playlists'
         }
       ]
     }
@@ -338,3 +377,6 @@ output AZURE_SETLISTFM_MCP_URL string = setlistFmMCP.outputs.mcpUrl
 output AZURE_SPOTIFY_MCP_URL string = spotifyMCP.outputs.mcpUrl
 #disable-next-line outputs-should-not-contain-secrets
 output AZURE_SPOTIFY_SUBSCRIPTION_KEY string = spotifyMCP.outputs.refApiSubscriptionPrimaryKey
+output SPOTIFY_CLIENT_ID string = spotifyClientId
+#disable-next-line outputs-should-not-contain-secrets
+output SPOTIFY_CLIENT_SECRET string = spotifyClientSecret

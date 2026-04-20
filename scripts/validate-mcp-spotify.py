@@ -83,6 +83,7 @@ def get_spotify_token() -> str:
     if resp.status != 200:
         raise ConnectionError(f"Spotify token request failed: HTTP {resp.status} - {data}")
 
+    print(f"Spotify token response: {data}")
     return data["access_token"]
 
 
@@ -108,6 +109,7 @@ def post_mcp(payload: dict, bearer_token: str | None = None) -> dict:
     if bearer_token:
         headers["Authorization"] = f"Bearer {bearer_token}"
 
+    print(f"POST {MCP_URL} with payload: {json.dumps(payload)}")
     ctx = ssl.create_default_context()
     conn = http.client.HTTPSConnection(host, timeout=TIMEOUT, context=ctx)
     try:

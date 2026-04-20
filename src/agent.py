@@ -85,7 +85,7 @@ accurate, up-to-date information.
         server_url=os.getenv("AZURE_APIM_GATEWAY_URL") + "/spotify-mcp/mcp",
         require_approval="never",
         project_connection_id="spotify-mcp-connection",
-        allowed_tools=["getAnArtist", "getAnArtistsTopTracks", "getAnArtistsAlbums", "getAnAlbum", "getTrack", "getCurrentUsersProfile", "getCurrentUsersPlaylists"],
+        #allowed_tools=["getAnArtist", "getAnArtistsTopTracks", "getAnArtistsAlbums", "getAnAlbum", "getTrack", "getCurrentUsersProfile", "getCurrentUsersPlaylists"],
     )
 
     logger.info("Creating agent with the following configuration:")
