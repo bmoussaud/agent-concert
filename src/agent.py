@@ -6,7 +6,6 @@ information using the setlist.fm API via APIM.
 """
 import asyncio
 import os
-import subprocess
 from dotenv import load_dotenv
 from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
@@ -24,10 +23,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
-
-
-# Global agent ID - will be set on first creation
-AGENT_ID = None
 
 
 def get_or_create_agent(project_client: AIProjectClient, model_deployment: str, setlistfm_mcp_url: str) -> dict:
