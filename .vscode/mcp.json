@@ -1,5 +1,10 @@
 {
 	"servers": {
+		"mslearn": {
+			"url": "https://learn.microsoft.com/api/mcp",
+			"type": "http"
+		},
+	
 		"my-mcp-server-35918538": {
 			"url": "https://apim-agent-concert-dv6x6fsuttefa.azure-api.net/setlistfm-mcp/mcp",
 			"type": "http",

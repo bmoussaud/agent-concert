@@ -22,6 +22,13 @@ param apimPublisherName string
 @secure()
 param setlistfmApiKey string
 
+@description('Spotify Client ID for MCP Spotify microservice.')
+param spotifyClientId string
+
+@description('Spotify Client Secret for MCP Spotify microservice.')
+@secure()
+param spotifyClientSecret string
+
 var projectPrefix = 'agent-concert'
 
 @description('Tags to apply to all resources.')
@@ -90,7 +97,7 @@ module aiFoundry 'br/public:avm/res/cognitive-services/account:0.14.2' = {
           version: '2025-04-14'
         }
         sku: {
-          capacity: 1
+          capacity: 100
           name: 'GlobalStandard'
         }
       }
@@ -111,6 +118,10 @@ module aiFoundryProject 'modules/ai-foundry-project.bicep' = {
     managedIdentityPrincipalId: managedIdentity.outputs.principalId
     setlistfmMcpUrl: setlistFmMCP.outputs.mcpUrl
     setlistfmSubscriptionKey: setlistFmMCP.outputs.refApiSubscriptionPrimaryKey
+    spotifyMcpUrl: spotifyMCP.outputs.mcpUrl
+    spotifyClientId: spotifyClientId
+    spotifyClientSecret: spotifyClientSecret
+
   }
 }
 
@@ -144,6 +155,18 @@ module apim 'br/public:avm/res/api-management/service:0.14.1' = {
         ]
       }
     ]
+    loggers: [
+      {
+        credentials: {
+          instrumentationKey: applicationInsights.outputs.instrumentationKey
+        }
+        description: 'Logger to Azure Application Insights'
+        isBuffered: false
+        name: 'logger'
+        targetResourceId: applicationInsights.outputs.resourceId
+        type: 'applicationInsights'
+      } 
+    ]
     
     // APIs: Import setlist.fm API from OpenAPI spec with policy
     apis: [
@@ -163,7 +186,14 @@ module apim 'br/public:avm/res/api-management/service:0.14.1' = {
         policies: [
           {
             value: loadTextContent('policies/setlistfm-api-policy.xml')
-            format: 'xml'
+            format: 'rawxml'
+          }
+        ]
+        diagnostics: [
+          {
+            loggerName: 'logger'
+            metrics: true
+            name: 'applicationinsights'
           }
         ]
       }
@@ -179,11 +209,18 @@ module apim 'br/public:avm/res/api-management/service:0.14.1' = {
         type: 'http'
         format: 'openapi-link'
         value: 'https://raw.githubusercontent.com/sonallux/spotify-web-api/refs/heads/main/fixed-spotify-open-api.yml'
-        serviceUrl: 'https://api.spotify.com'
+        serviceUrl: 'https://api.spotify.com/v1'
         policies: [
           {
             value: loadTextContent('policies/spotify-api-policy.xml')
             format: 'xml'
+          }
+        ]
+        diagnostics: [
+          {
+            loggerName: 'logger'
+            metrics: true
+            name: 'applicationinsights'
           }
         ]
       }
@@ -268,6 +305,14 @@ module spotifyMCP 'modules/mcp-api.bicep' = {
           name: 'getTrack'
           operationName: 'get-track'
         }
+        {
+          name: 'getCurrentUsersProfile'
+          operationName: 'get-current-users-profile'
+        }
+        {
+          name: 'getCurrentUsersPlaylists'
+          operationName: 'get-a-list-of-current-users-playlists'
+        }
       ]
     }
   }
@@ -278,7 +323,7 @@ output AZURE_RESOURCE_GROUP string = resourceGroup().name
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = applicationInsights.outputs.connectionString
 output AZURE_AI_FOUNDRY_ENDPOINT string = aiFoundry.outputs.endpoint
 output AZURE_AI_PROJECT_ENDPOINT string = aiFoundryProject.outputs.projectEndpoint
-output AZURE_AI_MODEL_DEPLOYMENT_NAME string = 'gpt-4.1-mini'
+output AZURE_AI_MODEL_DEPLOYMENT_NAME string = 'gpt-4.1'
 output AZURE_MANAGED_IDENTITY_CLIENT_ID string = managedIdentity.outputs.clientId
 output AZURE_MANAGED_IDENTITY_NAME string = managedIdentity.outputs.name
 output AZURE_APIM_NAME string = apim.outputs.name

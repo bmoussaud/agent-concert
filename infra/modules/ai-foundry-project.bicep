@@ -28,6 +28,16 @@ param setlistfmMcpUrl string
 @description('APIM subscription primary key for the setlistfm-api subscription, used to authenticate MCP connection calls')
 param setlistfmSubscriptionKey string
 
+@description('URL of the Spotify MCP server exposed through API Management (e.g. https://<apim-name>.azure-api.net/spotify-mcp)')
+param spotifyMcpUrl string
+
+@description('Spotify Client ID for OAuth identity passthrough authentication')
+param spotifyClientId string
+
+@secure()
+@description('Spotify Client Secret for accessing Spotify API')
+param spotifyClientSecret string
+
 // Azure AI User role definition
 var azureAIUserRoleDefinitionId = subscriptionResourceId(
   'Microsoft.Authorization/roleDefinitions',
@@ -93,6 +103,39 @@ resource project 'Microsoft.CognitiveServices/accounts/projects@2025-12-01' = {
       //  type: 'mcp'
       //}
       metadata: {type: 'custom_MCP'}
+    }
+  }
+
+  resource connectionSpotifyMcp 'connections' = {
+    name: 'spotify-mcp-connection'
+    properties: {
+      category: 'RemoteTool'
+      target: spotifyMcpUrl
+      authType: 'OAuth2'
+      isSharedToAll: true
+      credentials: {
+        clientId: spotifyClientId
+        clientSecret: spotifyClientSecret
+      }
+      connectorName: 'spotify-mcp-connector'
+      authorizationUrl: 'https://accounts.spotify.com/authorize'
+      tokenUrl: 'https://accounts.spotify.com/api/token'
+      refreshUrl: 'https://accounts.spotify.com/api/token'
+      scopes: [
+        'user-read-private'
+        'user-read-email'
+        'user-library-read'
+        'user-personalized'
+
+        'user-top-read' 
+        'user-read-recently-played'
+        
+        'playlist-read-private' 
+        'playlist-modify-public'
+        'playlist-modify-private'
+        
+      ]
+      metadata: { type: 'custom_MCP' }
     }
   }
 }

@@ -59,6 +59,12 @@ You have access to the setlist.fm API through Azure API Management, which allows
 - Find concert setlists and performance details
 - Provide information about past and upcoming shows
 
+You have access to the spotify API through Azure API Management, which allows you to:
+- Search for artists and bands
+- Retrieve artist information and biographies
+- Get details about albums and tracks
+- Manage user playlists and preferences
+
 Your purpose is to help users discover concert information, find setlists from specific performances,
 and learn about artists' touring history. Always be friendly, informative, and music-enthusiastic in your responses.
 
@@ -74,6 +80,20 @@ accurate, up-to-date information.
         },
         project_connection_id="setlistfm-mcp-connection"
     )
+
+    # Exclude 'search' tool: its 'type' parameter is an array type, which is not
+    # supported by Azure AI Foundry Agents MCP tool schema validation.
+    # See: https://learn.microsoft.com/azure/ai-foundry/agents/how-to/tools/model-context-protocol#common-questions-and-errors
+    spotify_mcp_tool = MCPTool(
+        server_label="agent-mcp-spotify",
+        server_url=os.getenv("AZURE_APIM_GATEWAY_URL") + "/spotify-mcp/mcp",
+        require_approval="never",
+        project_connection_id="spotify-mcp-connection",
+        allowed_tools=["getAnArtist", "getAnArtistsTopTracks", "getAnArtistsAlbums", "getAnAlbum", "getTrack", "getCurrentUsersProfile", "getCurrentUsersPlaylists"],
+    )
+
+    logger.info("Creating agent with the following configuration:")
+    logger.info(f"Model deployment: {model_deployment}")
     logger.info(f"Using MCP tool with server URL: {setlistfm_mcp_url}")
     logger.info(f"MCP tool headers: {mcp_tool.headers}")
 
@@ -83,7 +103,7 @@ accurate, up-to-date information.
             definition=PromptAgentDefinition(
                 model=model_deployment,
                 instructions=instructions,
-                tools=[mcp_tool],
+                tools=[mcp_tool, spotify_mcp_tool],
             ),
         )
         logger.info(f"Created agent with ID: {agent.id}")
@@ -109,7 +129,7 @@ def run_agent_conversation(project_client: AIProjectClient, agent_name: str, age
             input=history,
             extra_body={"agent_reference": {"name": agent_name, "version": agent_version, "type": "agent_reference"}},
         )
-
+        logger.info(f"Agent response received: {response}")
         logger.info(f"Run completed with status: {response.status}")
         return response
 
@@ -171,6 +191,14 @@ async def main():
             logger.info(f"User message: {user_message}")
             test_response = run_agent_conversation(project_client=client, agent_name=agent_name, agent_version=agent_version, history=[{"role": "user", "content": user_message}])
             logger.info(f"Test {test_response.output_text}")
+
+
+        if os.getenv("SMOKE_SPOTIFY") is not None:
+            logger.info("Running smoke spotify test...")
+            user_message = "Give me the information about the artist Radiohead and their top tracks."
+            logger.info(f"User message: {user_message}")
+            test_response = run_agent_conversation(project_client=client, agent_name=agent_name, agent_version=agent_version, history=[{"role": "user", "content": user_message}])
+            logger.info(f"Test {test_response.output_text}")  
 
         # Create HTTP routes
         app = web.Application()

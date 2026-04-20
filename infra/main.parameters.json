@@ -19,6 +19,12 @@
     },
     "setlistfmApiKey": {
       "value": "4b15bd76-3455-4f06-b606-293848fbad49"
+    },
+    "spotifyClientId": {
+      "value": "1c3e47d871fe46c1bdc787e487233019"
+    },
+    "spotifyClientSecret": {
+      "value": "490e086df740497b90d36362ffa18ec2" 
     }
   }
 }

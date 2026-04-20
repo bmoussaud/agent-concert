@@ -1,11 +1,8 @@
 <policies>
   <inbound>
     <base />
-    <set-header name="Accept" exists-action="override">
-      <value>application/json</value>
-    </set-header>
     <set-header name="User-Agent" exists-action="override">
-      <value>spotify-mcp/1.0</value>
+        <value>spotify-mcp/1.0</value>
     </set-header>
   </inbound>
   <backend>
