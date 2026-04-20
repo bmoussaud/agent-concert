@@ -167,6 +167,26 @@ module apim 'br/public:avm/res/api-management/service:0.14.1' = {
           }
         ]
       }
+      {
+        name: 'spotify-api'
+        displayName: 'Spotify Web API'
+        description: 'Access to Spotify Web API for music data'
+        path: 'spotify'
+        protocols: [
+          'https'
+        ]
+        subscriptionRequired: true
+        type: 'http'
+        format: 'openapi-link'
+        value: 'https://raw.githubusercontent.com/sonallux/spotify-web-api/refs/heads/main/fixed-spotify-open-api.yml'
+        serviceUrl: 'https://api.spotify.com'
+        policies: [
+          {
+            value: loadTextContent('policies/spotify-api-policy.xml')
+            format: 'xml'
+          }
+        ]
+      }
     ]
     
     // Subscriptions: Create dedicated subscription for setlist.fm API
@@ -175,6 +195,12 @@ module apim 'br/public:avm/res/api-management/service:0.14.1' = {
         name: 'setlistfm-api-subscription'
         displayName: 'setlistfm-api'
         scope: '/apis/setlistfm-api'
+        allowTracing: true
+      }
+      {
+        name: 'spotify-api-subscription'
+        displayName: 'spotify-api'
+        scope: '/apis/spotify-api'
         allowTracing: true
       }
     ]
