@@ -232,6 +232,47 @@ module setlistFmMCP 'modules/mcp-api.bicep' =  {
   }
 }
 
+module spotifyMCP 'modules/mcp-api.bicep' = {
+  name: 'spotify-mcp'
+  params: {
+    apimName: apim.outputs.name
+    apiName: 'spotify-api'
+    mcp: {
+      name: 'spotify-mcp'
+      description: 'Spotify MCP for music and artist data'
+      displayName: 'Spotify MCP'
+      path: 'spotify-mcp'
+      policyXml: loadTextContent('policies/spotify-mcp-policy.xml')
+      tools: [
+        {
+          name: 'search'
+          operationName: 'search'
+        }
+        {
+          name: 'getAnArtist'
+          operationName: 'get-an-artist'
+        }
+        {
+          name: 'getAnArtistsTopTracks'
+          operationName: 'get-an-artists-top-tracks'
+        }
+        {
+          name: 'getAnArtistsAlbums'
+          operationName: 'get-an-artists-albums'
+        }
+        {
+          name: 'getAnAlbum'
+          operationName: 'get-an-album'
+        }
+        {
+          name: 'getTrack'
+          operationName: 'get-track'
+        }
+      ]
+    }
+  }
+}
+
 output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = applicationInsights.outputs.connectionString
@@ -249,3 +290,6 @@ output AZURE_SETLISTFM_SUBSCRIPTION_NAME string = 'setlistfm-api'
 output AZURE_SETLISTFM_SUBSCRIPTION_KEY string = setlistFmMCP.outputs.refApiSubscriptionPrimaryKey
 output AZURE_TENANT_ID string = subscription().tenantId
 output AZURE_SETLISTFM_MCP_URL string = setlistFmMCP.outputs.mcpUrl
+output AZURE_SPOTIFY_MCP_URL string = spotifyMCP.outputs.mcpUrl
+#disable-next-line outputs-should-not-contain-secrets
+output AZURE_SPOTIFY_SUBSCRIPTION_KEY string = spotifyMCP.outputs.refApiSubscriptionPrimaryKey
