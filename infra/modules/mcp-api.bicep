@@ -23,12 +23,12 @@ param mcp object = {
       {
         name:'searchForArtists'
         description:'Search for artists'
-        operationId:'resource__1-0_search_artists_getArtists_GET'
+        operation:'resource__1-0_search_artists_getArtists_GET'
       }
        {
         name:'searchForSetlists'
         description:'Search for Setlists'
-        operationId:'resource__1-0_search_setlists_getSetlists_GET'
+        operation:'resource__1-0_search_setlists_getSetlists_GET'
       }
     ]
 }
@@ -53,7 +53,7 @@ resource mcpApimApi 'Microsoft.ApiManagement/service/apis@2024-06-01-preview' = 
     mcptools: map(mcp.tools, (tool) => ({
       name: tool.name
       description: tool.name
-      operationId: '${refApimApi.id}/operations/${tool.operationName}'
+      operationId: '${refApimApi.id}/operations/${tool.operation}'
     }))
 
   }

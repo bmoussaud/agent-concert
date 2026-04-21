@@ -258,11 +258,11 @@ module setlistFmMCP 'modules/mcp-api.bicep' =  {
       tools :[
           {
             name:'searchForArtists'
-            operationName:'resource__1-0_search_artists_getArtists_GET'
+            operation:'resource__1-0_search_artists_getArtists_GET'
           }
           {
             name:'searchForSetlists'
-            operationName:'resource__1-0_search_setlists_getSetlists_GET'
+            operation:'resource__1-0_search_setlists_getSetlists_GET'
           }
         ]
     }
@@ -282,75 +282,56 @@ module spotifyMCP 'modules/mcp-api.bicep' = {
       policyXml: loadTextContent('policies/spotify-mcp-policy.xml')
       tools: [
         {
-          // APIM auto-generates the tool name from the OpenAPI operation summary:
-          // "Search for Item" (operationId: search) → searchForItem
           name: 'searchForItem'
-          operationName: 'search'
-        }
-        {
-          name: 'getArtist'
-          operationName: 'get-an-artist'
-        }
-        {
-          name: 'getArtistsTopTracks'
-          operationName: 'get-an-artists-top-tracks'
-        }
-        {
-          name: 'getArtistsAlbums'
-          operationName: 'get-an-artists-albums'
-        }
-        {
-          name: 'getAlbum'
-          operationName: 'get-an-album'
-        }
-        {
-          name: 'getTrack'
-          operationName: 'get-track'
-        }
-        {
-          name: 'getCurrentUsersProfile'
-          operationName: 'get-current-users-profile'
-        }
-        {
-          name: 'getCurrentUsersPlaylists'
-          operationName: 'get-a-list-of-current-users-playlists'
-        }
-        // Playlist CRUD
-        {
-          name: 'getPlaylist'
-          operationName: 'get-playlist'
-        }
-        {
-          name: 'getPlaylistItems'
-          operationName: 'get-playlists-items'
+          operation: 'search'
         }
         {
           name: 'createPlaylist'
-          operationName: 'create-playlist'
+          operation: 'create-playlist'
         }
         {
-          name: 'changePlaylistDetails'
-          operationName: 'change-playlist-details'
+          name: 'getCurrentUsersPlaylists'
+          operation: 'get-a-list-of-current-users-playlists'
         }
         {
-          name: 'addItemsToPlaylist'
-          operationName: 'add-items-to-playlist'
+          name: 'getPlaylistItems'
+          operation: 'get-playlists-items'
         }
         {
-          name: 'updatePlaylistItems'
-          operationName: 'reorder-or-replace-playlists-items'
+          name: 'getPlaylist'
+          operation: 'get-playlist'
         }
         {
-          name: 'removePlaylistItems'
-          operationName: 'remove-items-playlist'
+          name: 'getAlbum'
+          operation: 'get-an-album'
+        }
+        {
+          name: 'getArtist'
+          operation: 'get-an-artist'
+        }
+        {
+          name: 'getArtistsAlbums'
+          operation: 'get-an-artists-albums'
+        }
+        {
+          name: 'getArtistsTopTracks'
+          operation: 'get-an-artists-top-tracks'
+        }
+        {
+          name: 'getCurrentUsersProfile'
+          operation: 'get-current-users-profile'
+        }
+        {
+          name: 'getNewReleases'
+          operation: 'get-new-releases'
         }
         {
           name: 'getPlaylistCoverImage'
-          operationName: 'get-playlist-cover'
+          operation: 'get-playlist-cover'
         }
         {
-          name: 'getUsersPlaylists'
-          operationName: 'get-list-users-playlists'
+          name: 'getAlbumTracks'
+          operation: 'get-an-albums-tracks'
         }
       ]
     }
