@@ -241,6 +241,7 @@ def validate_search_artists(bearer_token: str, artist_name: str = "Eiffel") -> b
     }
     try:
         response = post_mcp(payload, bearer_token)
+        #print(f"Raw search response: {response}")
     except ConnectionError as exc:
         fail(f"HTTP error: {exc}")
         return False

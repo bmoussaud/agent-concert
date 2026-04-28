@@ -1,11 +1,11 @@
 <policies>
     <inbound>
         <base />
-        <set-variable name="rawRequestBody" value="@(context.Request.Body.As<string>(preserveContent: true))" />
+        <set-variable name="rawRequestBody" value="@(context.Request.Body != null ? context.Request.Body.As<string>(preserveContent: true) : string.Empty)" />
    
         <trace source="spotify-api" severity="error">
             <message>@($"[Inbound Spotify API] {context.Request.Method} {context.Request.Url}")</message>
-            <metadata name="body" value="@((string)context.Variables["rawRequestBody"])" />
+            <metadata name="body" value="@(string.IsNullOrEmpty((string)context.Variables["rawRequestBody"]) ? "none" : (string)context.Variables["rawRequestBody"])" />
         </trace>
     </inbound>
     <backend>
