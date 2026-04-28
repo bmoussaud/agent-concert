@@ -1,17 +1,45 @@
+<!--
+  Setlist.fm MCP API Policy
+  =========================
+  This policy intercepts MCP tool calls proxied through APIM to the setlist.fm backend.
+
+  Inbound processing:
+    1. Capture the raw request body before any mutation (for debug tracing).
+    2. Parse the JSON body and locate the tool arguments at params.arguments.
+    3. Strip "noisy" argument values that would degrade search quality:
+         - Empty strings
+         - Zero values (integer, float, or string "0")
+         - "19700101000000" — epoch-like default timestamp injected by some LLM tool calls
+         - "Unknown"        — placeholder string produced when the model has no value
+    4. Prefer MusicBrainz ID over free-text name: if artistMbid is present and non-empty,
+       remove artistName to avoid setlist.fm returning ambiguous results for artists
+       that share similar names.
+    5. Always remove the 'date' argument — the setlist.fm search API does not accept a
+       date filter directly; passing it causes malformed requests or empty results.
+    6. Trace the cleaned body for observability (visible in Azure Monitor / App Insights).
+-->
 <policies>
   <inbound>
     <base />
-     
+
+    <!-- Step 1 – Snapshot the original body before set-body mutates it -->
     <set-variable name="rawRequestBody" value="@(context.Request.Body != null ? context.Request.Body.As<string>(preserveContent: true) : string.Empty)" />
     <trace source="setlistfm-mcp" severity="error">
       <message>@($"[Inbound Setlist.fm MCP] {context.Request.Method} {context.Request.Url}")</message>
       <metadata name="body" value="@((string)context.Variables["rawRequestBody"])" />
     </trace>
+
+    <!-- Steps 2-5 – Clean the tool arguments before forwarding to the backend -->
     <set-body>@{
         if (context.Request.Body == null) { return string.Empty; }
         var body = context.Request.Body.As<JObject>(preserveContent: true);
         var args = body?["params"]?["arguments"] as JObject;
         if (args != null) {
+            // Collect keys whose values are meaningless defaults and should be stripped:
+            //   - Empty strings: the model left the field blank
+            //   - "19700101000000": epoch-like timestamp injected when no real date is known
+            //   - "Unknown": explicit placeholder produced by LLM when value is unavailable
+            //   - "0" / 0 / 0.0: numeric or string zero, indicating an unset field
             var toRemove = args.Properties()
                 .Where(p =>
                     (p.Value.Type == JTokenType.String && string.IsNullOrEmpty(p.Value.Value<string>())) ||
@@ -26,16 +54,21 @@
             foreach (var key in toRemove) {
                 args.Remove(key);
             }
-            // If artistMbid is present and non-empty, remove artistName to avoid ambiguity
+            // Step 4 – When a MusicBrainz ID is available, drop artistName:
+            // setlist.fm gives more precise results with an MBID and may return
+            // ambiguous matches when both artistMbid and artistName are supplied.
             var mbid = args["artistMbid"]?.Value<string>();
             if (!string.IsNullOrEmpty(mbid)) {
                 args.Remove("artistName");
             }
-            // Always remove 'date' argument
+            // Step 5 – Remove 'date': the setlist.fm search endpoint does not support
+            // date filtering; the argument is silently ignored or causes errors.
             args.Remove("date");
         }
         return body?.ToString();
     }</set-body>
+
+    <!-- Step 6 – Trace the cleaned body for observability -->
     <trace source="setlistfm-mcp" severity="error">
       <message>@($"[Inbound Setlist.fm MCP] cleaned body")</message>
       <metadata name="body" value="@(context.Request.Body != null ? context.Request.Body.As<string>(preserveContent: true) : string.Empty)" />
@@ -46,12 +79,14 @@
   </backend>
   <outbound>
     <base />
+    <!-- Trace the backend response status for observability -->
     <trace source="setlistfm-mcp" severity="error">
       <message>@($"[Outbound Setlist.fm MCP] {context.Response.StatusCode} {context.Request.Method} {context.Request.Url}")</message>
     </trace>
   </outbound>
   <on-error>
     <base />
+    <!-- Surface APIM-level errors (e.g., backend timeout, policy exception) to the trace log -->
     <trace source="setlistfm-mcp" severity="error">
       <message>@($"[Error Setlist.fm MCP] {context.LastError.Source}: {context.LastError.Reason} - {context.LastError.Message}")</message>
     </trace>
