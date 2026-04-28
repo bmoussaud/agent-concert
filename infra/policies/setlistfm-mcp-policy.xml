@@ -1,14 +1,59 @@
 <policies>
   <inbound>
     <base />
+     
+    <set-variable name="rawRequestBody" value="@(context.Request.Body != null ? context.Request.Body.As<string>(preserveContent: true) : string.Empty)" />
+    <trace source="setlistfm-mcp" severity="error">
+      <message>@($"[Inbound Setlist.fm MCP] {context.Request.Method} {context.Request.Url}")</message>
+      <metadata name="body" value="@((string)context.Variables["rawRequestBody"])" />
+    </trace>
+    <set-body>@{
+        if (context.Request.Body == null) { return string.Empty; }
+        var body = context.Request.Body.As<JObject>(preserveContent: true);
+        var args = body?["params"]?["arguments"] as JObject;
+        if (args != null) {
+            var toRemove = args.Properties()
+                .Where(p =>
+                    (p.Value.Type == JTokenType.String && string.IsNullOrEmpty(p.Value.Value<string>())) ||
+                    (p.Value.Type == JTokenType.String && p.Value.Value<string>() == "19700101000000") ||
+                    (p.Value.Type == JTokenType.String && p.Value.Value<string>() == "Unknown") ||
+                    (p.Value.Type == JTokenType.String && p.Value.Value<string>() == "0") ||
+                    (p.Value.Type == JTokenType.Integer && p.Value.Value<long>() == 0L) ||
+                    (p.Value.Type == JTokenType.Float && p.Value.Value<double>() == 0.0)
+                )
+                .Select(p => p.Name)
+                .ToList();
+            foreach (var key in toRemove) {
+                args.Remove(key);
+            }
+            // If artistMbid is present and non-empty, remove artistName to avoid ambiguity
+            var mbid = args["artistMbid"]?.Value<string>();
+            if (!string.IsNullOrEmpty(mbid)) {
+                args.Remove("artistName");
+            }
+            // Always remove 'date' argument
+            args.Remove("date");
+        }
+        return body?.ToString();
+    }</set-body>
+    <trace source="setlistfm-mcp" severity="error">
+      <message>@($"[Inbound Setlist.fm MCP] cleaned body")</message>
+      <metadata name="body" value="@(context.Request.Body != null ? context.Request.Body.As<string>(preserveContent: true) : string.Empty)" />
+    </trace>
   </inbound>
   <backend>
     <base />
   </backend>
   <outbound>
     <base />
+    <trace source="setlistfm-mcp" severity="error">
+      <message>@($"[Outbound Setlist.fm MCP] {context.Response.StatusCode} {context.Request.Method} {context.Request.Url}")</message>
+    </trace>
   </outbound>
   <on-error>
     <base />
+    <trace source="setlistfm-mcp" severity="error">
+      <message>@($"[Error Setlist.fm MCP] {context.LastError.Source}: {context.LastError.Reason} - {context.LastError.Message}")</message>
+    </trace>
   </on-error>
 </policies>

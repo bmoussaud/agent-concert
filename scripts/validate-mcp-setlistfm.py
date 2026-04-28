@@ -174,6 +174,7 @@ def validate_list_tools() -> bool:
     ok(f"{len(tools)} tool(s) available:")
     for tool in tools:
         print(f"    - {tool.get('name')}: {tool.get('description', '')}")
+        print(f"      inputSchema: {tool.get('inputSchema', {})}")
     return True
 
 
@@ -223,6 +224,56 @@ def validate_search_artists(artist_name: str = "Eiffel") -> bool:
     return True
 
 
+def validate_search_setlists(artist_name: str = "Depeche Mode") -> bool:
+    info(f"Calling searchForSetlists with artistName='{artist_name}'...")
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "method": "tools/call",
+        "params": {
+            "name": "searchForSetlists",
+            "arguments": {"artistName": artist_name},
+        },
+    }
+    try:
+        response = post_mcp(payload)
+    except ConnectionError as exc:
+        fail(f"HTTP error: {exc}")
+        return False
+    except OSError as exc:
+        fail(f"Connection error: {exc}")
+        return False
+    except Exception as exc:
+        fail(f"Unexpected error: {exc}")
+        return False
+
+    if "error" in response:
+        fail(f"MCP error: {response['error']}")
+        return False
+
+    content = response.get("result", {}).get("content", [])
+    if not content:
+        fail("No content returned by searchForSetlists")
+        return False
+
+    # Parse the returned text as JSON to display setlist info
+    try:
+        data = json.loads(content[0].get("text", "{}"))
+        setlists = data.get("setlist", [])
+        ok(f"Found {len(setlists)} setlist(s) for '{artist_name}':")
+        for setlist in setlists[:5]:
+            event_date = setlist.get("eventDate", "unknown date")
+            venue = setlist.get("venue", {})
+            venue_name = venue.get("name", "unknown venue")
+            city = venue.get("city", {}).get("name", "unknown city")
+            print(f"    - {event_date} @ {venue_name}, {city}")
+    except (json.JSONDecodeError, KeyError):
+        # Fall back to raw text preview
+        ok(f"Response received ({len(str(content))} chars): {str(content)[:200]}")
+
+    return True
+
+
 def main() -> int:
     print("\n=== setlist.fm MCP Connection Validation ===\n")
 
@@ -234,10 +285,12 @@ def main() -> int:
     print()
     tools_ok = validate_list_tools()
     print()
-    search_ok = validate_search_artists("Eiffel")
+    search_ok = validate_search_artists("Depeche Mode")
+    print()
+    setlists_ok = validate_search_setlists("Depeche Mode")
     print()
 
-    if init_ok and tools_ok and search_ok:
+    if init_ok and tools_ok and search_ok and setlists_ok:
         ok("All checks passed - MCP connection is healthy.")
         return 0
     else:
