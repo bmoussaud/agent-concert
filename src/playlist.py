@@ -66,6 +66,8 @@ and learn about artists' touring history. Always be friendly, informative, and m
 
 When users ask about concerts or artists, use your tools to search the setlist.fm database and provide
 accurate, up-to-date information.
+
+Mandatory: each time you use a tool, provide the input parameters you are using for that tool in the response, so that we can verify that the agent is using the tools correctly.
 """
     mcp_tool = MCPTool(
         server_label="agent-mcp-setlistfm",
@@ -163,6 +165,7 @@ async def main():
     try:
         # Initialize clients
         model_deployment = os.getenv("AZURE_AI_MODEL_DEPLOYMENT_NAME")
+        model_deployment = "gpt-5.4-nano-1"
         if model_deployment is None:
             raise ValueError("AZURE_AI_MODEL_DEPLOYMENT_NAME environment variable is required")
 
@@ -180,22 +183,28 @@ async def main():
         agent_name = agent_info['agent_name']
         agent_version = agent_info['agent_version']
 
-        if os.getenv("SMOKE_TEST") is not None:
-            logger.info("Running smoke test...")
-            user_message = "Can you provide details about recent concerts and setlists in 2026 performed by the band Eiffel?"
-            logger.info(f"User message: {user_message}")
-            test_response = run_agent_conversation(project_client=client, agent_name=agent_name, agent_version=agent_version, history=[{"role": "user", "content": user_message}])
-            logger.info(f"Test {test_response.output_text}")
+        logger.info("Running smoke spotify test...")
 
+        user_message = "What are the tools provided by the spotify MCP?"  # This is a smoke test to verify connectivity to the spotify MCP and that the agent can use it. The actual functionality of the tools will be tested separately.
+        logger.info(f"User message: {user_message}")
+        test_response = run_agent_conversation(project_client=client, agent_name=agent_name, agent_version=agent_version, history=[{"role": "user", "content": user_message}])
+        logger.info(f"Test {test_response.output_text}")  
 
-        if os.getenv("SMOKE_SPOTIFY") is not None:
-            logger.info("Running smoke spotify test...")
-            user_message = "Give me the information about the artist Radiohead and their top tracks."
-            logger.info(f"User message: {user_message}")
-            test_response = run_agent_conversation(project_client=client, agent_name=agent_name, agent_version=agent_version, history=[{"role": "user", "content": user_message}])
-            logger.info(f"Test {test_response.output_text}")  
+        user_message = "What are the input parameters to create a playlist in Spotify?"  # This is a smoke test to verify connectivity to the spotify MCP and that the agent can use it. The actual functionality of the tools will be tested separately.
+        logger.info(f"User message: {user_message}")
+        test_response = run_agent_conversation(project_client=client, agent_name=agent_name, agent_version=agent_version, history=[{"role": "user", "content": user_message}])
+        logger.info(f"Test {test_response.output_text}")  
 
-       
+        user_message = "Create a public playlist in Spotify named 'benoit is beau' "  # This is a smoke test to verify connectivity to the spotify MCP and that the agent can use it. The actual functionality of the tools will be tested separately.
+        logger.info(f"User message: {user_message}")
+        test_response = run_agent_conversation(project_client=client, agent_name=agent_name, agent_version=agent_version, history=[{"role": "user", "content": user_message}])
+        logger.info(f"Test {test_response.output_text}") 
+
+        user_message = "Yes Create the playlist "  # This is a smoke test to verify connectivity to the spotify MCP and that the agent can use it. The actual functionality of the tools will be tested separately.
+        logger.info(f"User message: {user_message}")
+        test_response = run_agent_conversation(project_client=client, agent_name=agent_name, agent_version=agent_version, history=[{"role": "user", "content": user_message}])
+        logger.info(f"Test {test_response.output_text}") 
+
     except Exception as e:
         logger.error(f"Failed to start agent: {e}", exc_info=True)
         raise

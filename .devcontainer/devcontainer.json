@@ -27,6 +27,7 @@
 				"GitHub.vscode-github-actions",
 				"GitHub.copilot",
 				"ms-azuretools.vscode-azure-github-copilot",
+				"ms-azuretools.vscode-azure-mcp-server",
 				"esbenp.prettier-vscode",
 				"ms-azuretools.vscode-docker",
 				"ms-python.autopep8"

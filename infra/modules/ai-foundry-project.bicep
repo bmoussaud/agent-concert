@@ -116,6 +116,7 @@ resource project 'Microsoft.CognitiveServices/accounts/projects@2025-12-01' = {
       credentials: {
         clientId: spotifyClientId
         clientSecret: spotifyClientSecret
+
       }
       connectorName: 'spotify-mcp-connector'
       authorizationUrl: 'https://accounts.spotify.com/authorize'
@@ -125,8 +126,7 @@ resource project 'Microsoft.CognitiveServices/accounts/projects@2025-12-01' = {
         'user-read-private'
         'user-read-email'
         'user-library-read'
-        'user-personalized'
-
+    
         'user-top-read' 
         'user-read-recently-played'
         

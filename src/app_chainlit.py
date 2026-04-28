@@ -93,6 +93,7 @@ async def on_message(message: cl.Message):
     )
 
     # Display MCP tool calls as Chainlit steps
+    consent_requested = False
     if hasattr(response, "output") and response.output:
         for item in response.output:
             item_type = getattr(item, "type", None)
@@ -110,6 +111,23 @@ async def on_message(message: cl.Message):
                 # Attach result to the last open step if possible
                 async with cl.Step(name="📦 Tool result", type="tool") as step:
                     step.output = output_value
+
+            # OAuth consent required — display a clickable link to authorize
+            elif item_type == "oauth_consent_request":
+                consent_link = getattr(item, "consent_link", None)
+                server_label = getattr(item, "server_label", "a service")
+                if consent_link:
+                    consent_requested = True
+                    await cl.Message(
+                        content=(
+                            f"🔐 **Authorization required for {server_label}**\n\n"
+                            f"Please [click here to authorize]({consent_link}) and then resend your message."
+                        )
+                    ).send()
+
+    if consent_requested:
+        # Don't append an empty assistant turn; wait for the user to re-send after consent
+        return
 
     # Persist updated history (append assistant turn)
     history.append({"role": "assistant", "content": response.output_text})

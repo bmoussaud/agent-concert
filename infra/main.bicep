@@ -97,7 +97,7 @@ module aiFoundry 'br/public:avm/res/cognitive-services/account:0.14.2' = {
           version: '2025-04-14'
         }
         sku: {
-          capacity: 100
+          capacity: 500
           name: 'GlobalStandard'
         }
       }
@@ -121,7 +121,6 @@ module aiFoundryProject 'modules/ai-foundry-project.bicep' = {
     spotifyMcpUrl: spotifyMCP.outputs.mcpUrl
     spotifyClientId: spotifyClientId
     spotifyClientSecret: spotifyClientSecret
-
   }
 }
 
@@ -205,15 +204,15 @@ module apim 'br/public:avm/res/api-management/service:0.14.1' = {
         protocols: [
           'https'
         ]
-        subscriptionRequired: true
+        subscriptionRequired: false
         type: 'http'
-        format: 'openapi-link'
-        value: 'https://raw.githubusercontent.com/sonallux/spotify-web-api/refs/heads/main/fixed-spotify-open-api.yml'
+        format: 'openapi'
+        value: loadTextContent('openapi/spotify-openapi-trimmed.yml')
         serviceUrl: 'https://api.spotify.com/v1'
         policies: [
           {
             value: loadTextContent('policies/spotify-api-policy.xml')
-            format: 'xml'
+            format: 'rawxml'
           }
         ]
         diagnostics: [
@@ -258,10 +257,12 @@ module setlistFmMCP 'modules/mcp-api.bicep' =  {
       tools :[
           {
             name:'searchForArtists'
+            description:'Search for artists'
             operation:'resource__1-0_search_artists_getArtists_GET'
           }
           {
             name:'searchForSetlists'
+            description:'Search for Setlists'
             operation:'resource__1-0_search_setlists_getSetlists_GET'
           }
         ]
@@ -281,57 +282,80 @@ module spotifyMCP 'modules/mcp-api.bicep' = {
       path: 'spotify-mcp'
       policyXml: loadTextContent('policies/spotify-mcp-policy.xml')
       tools: [
-        {
+       /*  {
           name: 'searchForItem'
+          description: 'Get Spotify catalog information about albums, artists, playlists, tracks, shows, episodes or audiobooks that match a keyword string. Audiobooks are only available within the US, UK, Canada, Ireland, New Zealand and Australia markets.'
           operation: 'search'
-        }
+        } */
         {
           name: 'createPlaylist'
+          description: 'Create a playlist for the current Spotify user. The playlist will be empty until you add tracks.'
           operation: 'create-playlist'
         }
         {
           name: 'getCurrentUsersPlaylists'
+          description: 'Get a list of the playlists owned or followed by the current Spotify user.'
           operation: 'get-a-list-of-current-users-playlists'
         }
         {
           name: 'getPlaylistItems'
+          description: 'Get full details of the items of a playlist owned by a Spotify user.'
           operation: 'get-playlists-items'
         }
         {
           name: 'getPlaylist'
+          description: 'Get a playlist owned by a Spotify user.'
           operation: 'get-playlist'
         }
         {
           name: 'getAlbum'
+          description: 'Get Spotify catalog information for a single album.'
           operation: 'get-an-album'
         }
         {
           name: 'getArtist'
+          description: 'Get Spotify catalog information for a single artist identified by their unique Spotify ID.'
           operation: 'get-an-artist'
         }
         {
           name: 'getArtistsAlbums'
+          description: 'Get Spotify catalog information about an artist\'s albums.'
           operation: 'get-an-artists-albums'
         }
         {
           name: 'getArtistsTopTracks'
+          description: 'Get Spotify catalog information about an artist\'s top tracks by country.'
           operation: 'get-an-artists-top-tracks'
         }
         {
           name: 'getCurrentUsersProfile'
+          description: 'Get detailed profile information about the current user (including the current user\'s username).'
           operation: 'get-current-users-profile'
         }
         {
           name: 'getNewReleases'
+          description: 'Get a list of new album releases featured in Spotify (shown, for example, on a Spotify player\'s Browse tab).'
           operation: 'get-new-releases'
         }
         {
           name: 'getPlaylistCoverImage'
+          description: 'Get the current image associated with a specific playlist.'
           operation: 'get-playlist-cover'
         }
         {
           name: 'getAlbumTracks'
+          description: 'Get Spotify catalog information about an album\'s tracks. Optional parameters can be used to limit the number of tracks returned.'
           operation: 'get-an-albums-tracks'
+        }
+        { 
+          name:'updatePlaylistItems'
+          description:'Either reorder or replace items in a playlist depending on the request\'s parameters. To reorder items, include range_start, insert_before, range_length and snapshot_id in the request body. To replace items, include uris as either a query parameter or in the request body. Replacing items in a playlist will overwrite its existing items. This operation can be used for replacing or clearing items in a playlist.'
+          operation: 'reorder-or-replace-playlists-items'
+        }
+        {
+          name: 'addItemsToPlaylist'
+          description: 'Add one or more items to a user\'s playlist. Provide a playlist_id and a list of Spotify URIs (tracks or episodes) to add. An optional position parameter (zero-based index) controls where items are inserted; if omitted they are appended.'
+          operation: 'add-items-to-playlist'
         }
       ]
     }

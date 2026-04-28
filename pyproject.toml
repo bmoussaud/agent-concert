@@ -18,4 +18,9 @@ dependencies = [
 # Allow pre-release versions for beta packages
 prerelease = "allow"
 
+[dependency-groups]
+dev = [
+    "pyyaml>=6.0.3",
+]
+
 

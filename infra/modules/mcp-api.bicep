@@ -52,7 +52,7 @@ resource mcpApimApi 'Microsoft.ApiManagement/service/apis@2024-06-01-preview' = 
     subscriptionRequired: false
     mcptools: map(mcp.tools, (tool) => ({
       name: tool.name
-      description: tool.name
+      description: tool.description
       operationId: '${refApimApi.id}/operations/${tool.operation}'
     }))
 

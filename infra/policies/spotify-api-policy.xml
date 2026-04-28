@@ -1,17 +1,30 @@
 <policies>
-  <inbound>
-    <base />
-    <set-header name="User-Agent" exists-action="override">
-        <value>spotify-mcp/1.0</value>
-    </set-header>
-  </inbound>
-  <backend>
-    <base />
-  </backend>
-  <outbound>
-    <base />
-  </outbound>
-  <on-error>
-    <base />
-  </on-error>
+    <inbound>
+        <base />
+        <set-variable name="rawRequestBody" value="@(context.Request.Body.As<string>(preserveContent: true))" />
+   
+        <trace source="spotify-api" severity="error">
+            <message>@($"[Inbound Spotify API] {context.Request.Method} {context.Request.Url}")</message>
+            <metadata name="body" value="@((string)context.Variables["rawRequestBody"])" />
+        </trace>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+        <set-variable name="responseBody" value="@{
+            return context.Response.Body != null ? context.Response.Body.As<string>(preserveContent: true) : &quot;&quot;;
+        }" />
+        <trace source="spotify-api" severity="error">
+            <message>@($"[Outbound SpotifyAPI] {context.Response.StatusCode} {context.Request.Method} {context.Request.Url}")</message>
+            <metadata name="Response.Body" value="@((context.Response.Body == null || String.IsNullOrEmpty((string)context.Variables[&quot;responseBody&quot;])) ? &quot;none&quot; : (string)context.Variables[&quot;responseBody&quot;])" />
+        </trace>
+    </outbound>
+    <on-error>
+        <base />
+        <trace source="spotify-api" severity="error">
+            <message>@($"[Error SpotifyAPI] {context.LastError.Source}: {context.LastError.Reason} - {context.LastError.Message}")</message>
+        </trace>
+    </on-error>
 </policies>

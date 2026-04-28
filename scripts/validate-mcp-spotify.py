@@ -223,6 +223,7 @@ def validate_list_tools(bearer_token: str | None) -> bool:
     ok(f"{len(tools)} tool(s) available:")
     for tool in tools:
         print(f"    - {tool.get('name')}: {tool.get('description', '')}")
+        print(f"      inputSchema: {tool.get('inputSchema', {})}")
     return True
 
 

@@ -1,14 +1,26 @@
 <policies>
   <inbound>
     <base />
+     
+    <set-variable name="rawRequestBody" value="@(context.Request.Body.As<string>(preserveContent: true))" />
+    <trace source="spotify-mcp" severity="error">
+      <message>@($"[Inbound Spotify MCP] {context.Request.Method} {context.Request.Url}")</message>
+      <metadata name="body" value="@((string)context.Variables["rawRequestBody"])" />
+    </trace>
   </inbound>
   <backend>
     <base />
   </backend>
   <outbound>
     <base />
+    <trace source="spotify-mcp" severity="error">
+      <message>@($"[Outbound Spotify MCP] {context.Response.StatusCode} {context.Request.Method} {context.Request.Url}")</message>
+    </trace>
   </outbound>
   <on-error>
     <base />
+    <trace source="spotify-mcp" severity="error">
+      <message>@($"[Error Spotify MCP] {context.LastError.Source}: {context.LastError.Reason} - {context.LastError.Message}")</message>
+    </trace>
   </on-error>
 </policies>

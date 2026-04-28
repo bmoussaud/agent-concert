@@ -10,14 +10,24 @@
     <set-header name="User-Agent" exists-action="override">
         <value>setlistfm-mcp/1.0</value>
     </set-header>
+    <trace source="setlistfm-api" severity="error">
+        <message>@($"[Inbound SetList.fm API] {context.Request.Method} {context.Request.Url}")</message> 
+    </trace>
+    
   </inbound>
   <backend>
     <base />
   </backend>
   <outbound>
     <base />
+    <trace source="setlistfm-api" severity="error">
+        <message>@($"[Outbound SetList.fm API] {context.Response.StatusCode} {context.Request.Method} {context.Request.Url}")</message>
+    </trace>
   </outbound>
   <on-error>
     <base />
+    <trace source="setlistfm-api" severity="error">
+        <message>@($"[Error SetList.fm API] {context.LastError.Source}: {context.LastError.Reason} - {context.LastError.Message}")</message>
+    </trace>
   </on-error>
 </policies>
