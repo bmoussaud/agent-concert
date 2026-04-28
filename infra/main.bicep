@@ -140,6 +140,17 @@ module apim 'br/public:avm/res/api-management/service:0.14.1' = {
         name: 'apimDiag'
       }
     ]
+
+    products: [
+      {
+        name: 'mcp-product'
+        displayName: 'mcp-product'
+        description: 'MCP API'
+        subscriptionRequired: false
+        approvalRequired: false
+        state: 'published'
+      }
+    ]
     
     // Named Values: Store the setlist.fm API key
     namedValues: [
@@ -193,6 +204,11 @@ module apim 'br/public:avm/res/api-management/service:0.14.1' = {
             loggerName: 'logger'
             metrics: true
             name: 'applicationinsights'
+            verbosity: 'verbose'
+            httpCorrelationProtocol:'W3C'
+            alwaysLog: 'allErrors'
+            frontend: {request: {body:{bytes:8000}}, response: {body:{bytes:8000}}}
+            backend: {request: {body:{bytes:8000}}, response: {body:{bytes:8000}}}
           }
         ]
       }
@@ -220,6 +236,11 @@ module apim 'br/public:avm/res/api-management/service:0.14.1' = {
             loggerName: 'logger'
             metrics: true
             name: 'applicationinsights'
+            verbosity: 'verbose'
+            httpCorrelationProtocol:'W3C'
+            alwaysLog: 'allErrors'
+            frontend: {request: {body:{bytes:8000}}, response: {body:{bytes:8000}}}
+            backend: {request: {body:{bytes:8000}}, response: {body:{bytes:8000}}}
           }
         ]
       }
