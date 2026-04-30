@@ -60,6 +60,7 @@ def check_env() -> bool:
         "AZURE_AI_MODEL_DEPLOYMENT_NAME": os.getenv("AZURE_AI_MODEL_DEPLOYMENT_NAME"),
         "AZURE_SETLISTFM_MCP_URL": os.getenv("AZURE_SETLISTFM_MCP_URL"),
         "AZURE_SETLISTFM_SUBSCRIPTION_KEY": os.getenv("AZURE_SETLISTFM_SUBSCRIPTION_KEY"),
+        "AZURE_SPOTIFY_MCP_URL": os.getenv("AZURE_SPOTIFY_MCP_URL"),
     }
     missing = [k for k, v in required.items() if not v]
     if missing:
@@ -70,6 +71,8 @@ def check_env() -> bool:
     ok(f"MCP URL:           {required['AZURE_SETLISTFM_MCP_URL']}")
     sub_key = required["AZURE_SETLISTFM_SUBSCRIPTION_KEY"]
     ok(f"Subscription key:  {'*' * 8}{sub_key[-4:]}")
+    ok(f"Spotify MCP URL:   {required['AZURE_SPOTIFY_MCP_URL']}")
+    ok("Spotify auth:      spotify-mcp-connection (project connection)")
     return True
 
 
@@ -108,13 +111,23 @@ def create_agent(client: AIProjectClient) -> tuple[str, str]:
         project_connection_id="setlistfm-mcp-connection",
     )
 
+    # Exclude 'searchForItem' tool: its 'type' parameter is an array type not supported
+    # by Azure AI Foundry Agents MCP tool schema validation.
+    spotify_mcp_tool = MCPTool(
+        server_label="agent-mcp-spotify",
+        server_url=os.getenv("AZURE_SPOTIFY_MCP_URL"),
+        require_approval="never",
+        allowed_tools=["searchForItem"],
+        project_connection_id="spotify-mcp-connection",
+    )
+
     with client.get_openai_client():
         agent = client.agents.create_version(
             agent_name="validate-setlist",
             definition=PromptAgentDefinition(
                 model=os.getenv("AZURE_AI_MODEL_DEPLOYMENT_NAME"),
                 instructions=instructions,
-                tools=[mcp_tool],
+                tools=[mcp_tool, spotify_mcp_tool],
             ),
         )
     return agent.name, agent.version
@@ -145,8 +158,10 @@ def run_turn(client: AIProjectClient, agent_name: str, agent_version: str, histo
             },
         )
     if response.status != "completed":
+        fail(f"Agent run did not complete successfully: response={response}")
         fail(f"Agent run ended with unexpected status: {response.status}")
         return None
+    #print(f"Full agent response (debug): {response}")
     return response.output_text
 
 
@@ -188,7 +203,8 @@ def validate_search_artist(
         fail("Agent returned an empty response for the artist search")
         return False
 
-    info(f"Turn 1 — agent reply (first 300 chars): {reply[:300]}")
+    info(f"Turn 1 — agent reply : {reply}")
+    info(f"Turn 1 — ------")
     ok(f"Artist search completed for {artist!r}")
     # Append assistant reply so Turn 2 has the full context
     history.append({"role": "assistant", "content": reply})
@@ -206,7 +222,7 @@ def validate_get_setlists(
 
     Expects the reply to contain setlist/concert content.
     """
-    user_msg = "Get the last 5 setlists of this artist"
+    user_msg = "Get the latest 5 setlists of this artist. If not found in the current year, get the latest 5 setlists available."
     info(f"Turn 2 — user: {user_msg!r}")
     history.append({"role": "user", "content": user_msg})
 
@@ -220,7 +236,8 @@ def validate_get_setlists(
         fail("Agent returned an empty response for the setlists request")
         return False
 
-    info(f"Turn 2 — agent reply (first 600 chars):\n{reply[:600]}")
+    info(f"Turn 2 — agent reply:\n{reply}")
+    info(f"Turn 2 — ------")
 
     # Basic content check: response should mention concert-related keywords
     keywords = ("setlist", "concert", "show", "venue", "date", "performed", "song", "track")
@@ -230,6 +247,56 @@ def validate_get_setlists(
         return False
 
     ok("Setlist data received and validated")
+    # Append assistant reply so Turn 3 has the full context
+    history.append({"role": "assistant", "content": reply})
+    return True
+
+
+def validate_average_setlist_with_spotify(
+    client: AIProjectClient,
+    agent_name: str,
+    agent_version: str,
+    artist: str,
+    history: list[dict],
+) -> bool:
+    """
+    Turn 3 – ask the agent to build an average setlist from the 5 latest shows
+    and search each track on Spotify.
+
+    Expects the reply to reference both setlist data and Spotify tracks.
+    """
+    user_msg = (
+        f"I'm waiting for {artist}'s next concert! "
+        "Using the 5 setlists we just retrieved, build an average setlist "
+    )
+    info(f"Turn 3 — user: {user_msg!r}")
+    history.append({"role": "user", "content": user_msg})
+
+    try:
+        reply = run_turn(client, agent_name, agent_version, history)
+    except Exception as exc:
+        fail(f"Agent call failed: {exc}")
+        return False
+
+    if not reply:
+        fail("Agent returned an empty response for the average setlist + Spotify request")
+        return False
+
+    info(f"Turn 3 — agent reply (first 800 chars):\n{reply[:800]}")
+
+    # Validate that the response mentions both setlist and Spotify content
+    reply_lower = reply.lower()
+    setlist_keywords = ("setlist", "average", "most played", "frequently", "song", "track")
+    spotify_keywords = ("spotify", "spotify.com", "open.spotify", "uri", "album", "artist")
+    if not any(kw in reply_lower for kw in setlist_keywords):
+        fail("Response does not appear to contain average setlist data")
+        return False
+    if not any(kw in reply_lower for kw in spotify_keywords):
+        fail("Response does not appear to contain Spotify search results")
+        return False
+
+    ok("Average setlist built and Spotify tracks found")
+    history.append({"role": "assistant", "content": reply})
     return True
 
 
@@ -271,6 +338,10 @@ def main() -> int:
 
     # Step 5: Turn 2 — get last 5 setlists
     if not validate_get_setlists(client, agent_name, agent_version, history):
+        return 1
+
+    # Step 6: Turn 3 — build average setlist and search each track on Spotify
+    if not validate_average_setlist_with_spotify(client, agent_name, agent_version, artist, history):
         return 1
 
     print(f"\n{'=' * 60}")

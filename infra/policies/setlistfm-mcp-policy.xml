@@ -64,6 +64,7 @@
             // Step 5 – Remove 'date': the setlist.fm search endpoint does not support
             // date filtering; the argument is silently ignored or causes errors.
             args.Remove("date");
+            args.Remove("lastUpdated"); // Also remove lastUpdated for the same reason as date
         }
         return body?.ToString();
     }</set-body>

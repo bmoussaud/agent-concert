@@ -9,13 +9,13 @@
 			"type": "http" 
 		}, 
 	
-		/* "my-mcp-server-35918538": {
-			"url": "https://apim-agent-concert-dv6x6fsuttefa.azure-api.net/setlistfm-mcp/mcp",
+		"setlistfm": {
+			"url": "https://apim-agent-concert-dlmrvrpiayv3m.azure-api.net/setlistfm-mcp/mcp",
 			"type": "http",
 			"headers": {
 				"Ocp-Apim-Subscription-Key": "${input:apimSubscriptionKey}"
 			}
-		}*/
+		}
 	},
 	"inputs": [
 		{

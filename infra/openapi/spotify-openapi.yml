@@ -1,0 +1,568 @@
+openapi: 3.0.1
+info:
+  title: Spotify Web API
+  description: 'You can use Spotify''s Web API to discover music and podcasts, manage
+    your Spotify library, control audio playback, and much more. Browse our available
+    Web API endpoints using the sidebar at left, or via the navigation bar on top
+    of this page on smaller screens.
+
+    In order to make successful Web API requests your app will need a valid access
+    token. One can be obtained through <a href="https://developer.spotify.com/documentation/general/guides/authorization-guide/">OAuth
+    2.0</a>.
+
+    The base URI for all Web API requests is `https://api.spotify.com/v1`.
+
+    Need help? See our <a href="https://developer.spotify.com/documentation/web-api/guides/">Web
+    API guides</a> for more information, or visit the <a href="https://community.spotify.com/t5/Spotify-for-Developers/bd-p/Spotify_Developer">Spotify
+    for Developers community forum</a> to ask questions and connect with other developers.'
+  termsOfService: https://developer.spotify.com/terms/
+  contact:
+    name: sonallux
+    url: https://github.com/sonallux/spotify-web-api
+  version: '1.0'
+servers:
+- url: https://apim-agent-concert-dlmrvrpiayv3m.azure-api.net/spotify
+paths:
+  /albums/{id}:
+    get:
+      tags:
+      - Albums
+      summary: Get Album
+      description: Get Spotify catalog information for a single album.
+      operationId: get-an-album
+      parameters:
+      - name: id
+        in: path
+        description: The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)
+          of the album.
+        required: true
+      - name: market
+        in: query
+        description: An ISO 3166-1 alpha-2 country code. If specified, only content
+          available in that market is returned. The user account country takes priority
+          over this parameter when a valid access token is provided.
+      responses:
+        '200': {}
+        '401': {}
+        '403': {}
+        '429': {}
+  /albums/{id}/tracks:
+    get:
+      tags:
+      - Albums
+      - Tracks
+      summary: Get Album Tracks
+      description: 'Get Spotify catalog information about an album’s tracks.
+
+        Optional parameters can be used to limit the number of tracks returned.'
+      operationId: get-an-albums-tracks
+      parameters:
+      - name: id
+        in: path
+        description: The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)
+          of the album.
+        required: true
+      - name: market
+        in: query
+        description: An ISO 3166-1 alpha-2 country code. If specified, only content
+          available in that market is returned. The user account country takes priority
+          over this parameter when a valid access token is provided.
+      - name: limit
+        in: query
+        description: 'The maximum number of items to return. Default: 20. Minimum:
+          1. Maximum: 50.'
+      - name: offset
+        in: query
+        description: 'The index of the first item to return. Default: 0 (the first
+          item). Use with limit to get the next set of items.'
+      responses:
+        '200': {}
+        '401': {}
+        '403': {}
+        '429': {}
+  /artists/{id}:
+    get:
+      tags:
+      - Artists
+      summary: Get Artist
+      description: Get Spotify catalog information for a single artist identified
+        by their unique Spotify ID.
+      operationId: get-an-artist
+      parameters:
+      - name: id
+        in: path
+        description: The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)
+          of the artist.
+        required: true
+      responses:
+        '200': {}
+        '401': {}
+        '403': {}
+        '429': {}
+  /artists/{id}/albums:
+    get:
+      tags:
+      - Artists
+      - Albums
+      summary: Get Artist's Albums
+      description: Get Spotify catalog information about an artist's albums.
+      operationId: get-an-artists-albums
+      parameters:
+      - name: id
+        in: path
+        description: The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)
+          of the artist.
+        required: true
+      - name: include_groups
+        in: query
+        description: 'A comma-separated list of keywords to filter the response. Valid
+          values: album, single, appears_on, compilation. If not supplied, all album
+          types will be returned.'
+      - name: market
+        in: query
+        description: An ISO 3166-1 alpha-2 country code. If specified, only content
+          available in that market is returned. The user account country takes priority
+          over this parameter when a valid access token is provided.
+      - name: limit
+        in: query
+        description: 'The maximum number of items to return. Default: 5. Minimum:
+          1. Maximum: 10.'
+      - name: offset
+        in: query
+        description: 'The index of the first item to return. Default: 0 (the first
+          item). Use with limit to get the next set of items.'
+      responses:
+        '200': {}
+        '401': {}
+        '403': {}
+        '429': {}
+  /artists/{id}/top-tracks:
+    get:
+      tags:
+      - Artists
+      - Tracks
+      summary: Get Artist's Top Tracks
+      description: Get Spotify catalog information about an artist's top tracks by
+        country.
+      operationId: get-an-artists-top-tracks
+      parameters:
+      - name: id
+        in: path
+        description: The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)
+          of the artist.
+        required: true
+      - name: market
+        in: query
+        description: An ISO 3166-1 alpha-2 country code. If specified, only content
+          available in that market is returned. The user account country takes priority
+          over this parameter when a valid access token is provided.
+      responses:
+        '200': {}
+        '401': {}
+        '403': {}
+        '429': {}
+  /search:
+    get:
+      tags:
+      - Search
+      summary: Search for Item
+      description: Get Spotify catalog information about albums, artists, playlists,
+        tracks, shows, episodes or audiobooks that match a keyword string. Audiobooks
+        are only available within the US, UK, Canada, Ireland, New Zealand and Australia
+        markets.
+      operationId: search
+      parameters:
+      - name: market
+        in: query
+        description: An ISO 3166-1 alpha-2 country code. If specified, only content
+          available in that market is returned. The user account country takes priority
+          over this parameter when a valid access token is provided.
+      - name: limit
+        in: query
+        description: The maximum number of results to return in each item type.
+      - name: offset
+        in: query
+        description: The index of the first result to return. Use with limit to get
+          the next page of search results.
+      - name: include_external
+        in: query
+        description: If `include_external=audio` is specified it signals that the
+          client can play externally hosted audio content, and marks the content as
+          playable in the response. By default externally hosted audio content is
+          marked as unplayable in the response.
+      - name: q
+        in: query
+        description: Your search query. You can narrow down your search using field
+          filters. The available filters are `album`, `artist`, `track`, `year`, `upc`,
+          `tag:hipster`, `tag:new`, `isrc`, and `genre`. Each field filter only applies
+          to certain result types. The `artist` and `year` filters can be used while
+          searching albums, artists and tracks. You can filter on a single `year`
+          or a range (e.g. 1955-1960). The `album` filter can be used while searching
+          albums and tracks. The `genre` filter can be used while searching artists
+          and tracks. The `isrc` and `track` filters can be used while searching tracks.
+          The `upc`, `tag:new` and `tag:hipster` filters can only be used while searching
+          albums. The `tag:new` filter will return albums released in the past two
+          weeks and `tag:hipster` can be used to return only albums with the lowest
+          10% popularity.
+        required: true
+      - name: type
+        in: query
+        description: "A comma-separated list of item types to search across. Search\
+          \ results include hits\n            from all the specified item types. For\
+          \ example: `q=abacab&type=album,track` returns\n            both albums\
+          \ and tracks matching \"abacab\"."
+        required: true
+      responses:
+        '200': {}
+        '401': {}
+        '403': {}
+        '429': {}
+  /me:
+    get:
+      tags:
+      - Users
+      summary: Get Current User's Profile
+      description: Get detailed profile information about the current user (including
+        the current user's username).
+      operationId: get-current-users-profile
+      responses:
+        '200': {}
+        '401': {}
+        '403': {}
+        '429': {}
+  /playlists/{playlist_id}:
+    get:
+      tags:
+      - Playlists
+      summary: Get Playlist
+      description: Get a playlist owned by a Spotify user.
+      operationId: get-playlist
+      parameters:
+      - name: playlist_id
+        in: path
+        description: The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)
+          of the playlist.
+        required: true
+      - name: market
+        in: query
+        description: An ISO 3166-1 alpha-2 country code. If specified, only content
+          available in that market is returned. The user account country takes priority
+          over this parameter when a valid access token is provided.
+      - name: fields
+        in: query
+        description: 'Filters for the query: a comma-separated list of the fields
+          to return. If omitted, all fields are returned. Supports dot separator for
+          non-reoccurring fields, parentheses for reoccurring fields, and ! prefix
+          to exclude fields.'
+      - name: additional_types
+        in: query
+        description: 'A comma-separated list of item types your client supports besides
+          the default track type. Valid types are: track and episode.'
+      responses:
+        '200': {}
+        '401': {}
+        '403': {}
+        '429': {}
+  /playlists/{playlist_id}/items:
+    get:
+      tags:
+      - Playlists
+      - Tracks
+      summary: Get Playlist Items
+      description: 'Get full details of the items of a playlist owned by a Spotify
+        user. Optional parameters can be used to limit the number of items returned.
+        **Note**: This endpoint is only accessible for playlists owned by the current
+        user or playlists the user is a collaborator of. A `403 Forbidden` status
+        code will be returned if the user is neither the owner nor a collaborator
+        of the playlist.'
+      operationId: get-playlists-items
+      parameters:
+      - name: playlist_id
+        in: path
+        description: The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)
+          of the playlist.
+        required: true
+      - name: market
+        in: query
+        description: An ISO 3166-1 alpha-2 country code. If specified, only content
+          available in that market is returned. The user account country takes priority
+          over this parameter when a valid access token is provided.
+      - name: fields
+        in: query
+        description: 'Filters for the query: a comma-separated list of the fields
+          to return. If omitted, all fields are returned. Supports dot separator for
+          non-reoccurring fields, parentheses for reoccurring fields, and ! prefix
+          to exclude fields.'
+      - name: limit
+        in: query
+        description: 'The maximum number of items to return. Default: 20. Minimum:
+          1. Maximum: 50.'
+      - name: offset
+        in: query
+        description: 'The index of the first item to return. Default: 0 (the first
+          item). Use with limit to get the next set of items.'
+      - name: additional_types
+        in: query
+        description: 'A comma-separated list of item types your client supports besides
+          the default track type. Valid types are: track and episode.'
+      responses:
+        '200': {}
+        '401': {}
+        '403': {}
+        '429': {}
+    put:
+      tags:
+      - Playlists
+      - Tracks
+      summary: Update Playlist Items
+      description: 'Either reorder or replace items in a playlist depending on the
+        request''s parameters. To reorder items, include `range_start`, `insert_before`,
+        `range_length` and `snapshot_id` in the request''s body. To replace items,
+        include `uris` as either a query parameter or in the request''s body. Replacing
+        items in a playlist will overwrite its existing items. This operation can
+        be used for replacing or clearing items in a playlist. **Note**: Replace and
+        reorder are mutually exclusive operations which share the same endpoint, but
+        have different parameters. These operations can''t be applied together in
+        a single request.'
+      operationId: reorder-or-replace-playlists-items
+      parameters:
+      - name: playlist_id
+        in: path
+        description: The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)
+          of the playlist.
+        required: true
+      - name: uris
+        in: query
+        description: A comma-separated list of Spotify URIs to set, can be track or
+          episode URIs. A maximum of 100 items can be set in one request.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uris:
+                  type: array
+                  items:
+                    type: string
+                range_start:
+                  type: integer
+                  description: The position of the first item to be reordered.
+                insert_before:
+                  type: integer
+                  description: 'The position where the items should be inserted. To
+                    reorder the items to the end of the playlist, simply set _insert_before_
+                    to the position after the last item. Examples: To reorder the
+                    first item to the last position in a playlist with 10 items, set
+                    _range_start_ to 0, and _insert_before_ to 10. To reorder the
+                    last item in a playlist with 10 items to the start of the playlist,
+                    set _range_start_ to 9, and _insert_before_ to 0.'
+                range_length:
+                  type: integer
+                  description: 'The amount of items to be reordered. Defaults to 1
+                    if not set. The range of items to be reordered begins from the
+                    _range_start_ position, and includes the _range_length_ subsequent
+                    items. Example: To move the items at index 9-10 to the start of
+                    the playlist, _range_start_ is set to 9, and _range_length_ is
+                    set to 2.'
+                snapshot_id:
+                  type: string
+                  description: The playlist's snapshot ID against which you want to
+                    make the changes.
+              example:
+                range_start: 1
+                insert_before: 3
+                range_length: 2
+            example:
+              range_start: 1
+              insert_before: 3
+              range_length: 2
+      responses:
+        '200': {}
+        '401': {}
+        '403': {}
+        '429': {}
+    post:
+      tags:
+      - Playlists
+      - Tracks
+      summary: Add Items to Playlist
+      description: Add one or more items to a user's playlist.
+      operationId: add-items-to-playlist
+      parameters:
+      - name: playlist_id
+        in: path
+        description: The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)
+          of the playlist.
+        required: true
+      - name: position
+        in: query
+        description: The position to insert the items, a zero-based index. If omitted,
+          the items will be appended to the playlist. Items are added in the order
+          they are listed in the query string or request body.
+      - name: uris
+        in: query
+        description: A comma-separated list of Spotify URIs to add, can be track or
+          episode URIs. A maximum of 100 items can be added in one request.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uris:
+                  type: array
+                  items:
+                    type: string
+                  description: 'A JSON array of the Spotify URIs to add. For example:
+                    `{"uris": ["spotify:track:4iV5W9uYEdYUVa79Axb7Rh","spotify:track:1301WleyT98MSxVHPZCA6M"]}`
+                    A maximum of 100 items can be added in one request.'
+                position:
+                  type: integer
+                  description: The position to insert the items, a zero-based index.
+                    If omitted, the items will be appended to the playlist.
+            example:
+              uris:
+              - string
+              position: 0
+      responses:
+        '201': {}
+        '401': {}
+        '403': {}
+        '429': {}
+  /me/playlists:
+    get:
+      tags:
+      - Playlists
+      - Library
+      summary: Get Current User's Playlists
+      description: Get a list of the playlists owned or followed by the current Spotify
+        user.
+      operationId: get-a-list-of-current-users-playlists
+      parameters:
+      - name: limit
+        in: query
+        description: 'The maximum number of items to return. Default: 20. Minimum:
+          1. Maximum: 50.'
+      - name: offset
+        in: query
+        description: 'The index of the first playlist to return. Default: 0 (the first
+          object). Maximum offset: 100000. Use with limit to get the next set of playlists.'
+      responses:
+        '200': {}
+        '401': {}
+        '403': {}
+        '429': {}
+    post:
+      tags:
+      - Playlists
+      - Library
+      summary: Create Playlist
+      description: Create a playlist for the current Spotify user. (The playlist will
+        be empty until you [add tracks](/documentation/web-api/reference/add-tracks-to-playlist).)Each
+        user is generally limited to a maximum of 11000 playlists.
+      operationId: create-playlist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+              - name
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The name for the new playlist, for example `"Your Coolest
+                    Playlist"`. This name does not need to be unique; a user may have
+                    several playlists with the same name.
+                public:
+                  type: boolean
+                  description: 'Defaults to `true`. The playlist''s public/private
+                    status (if it should be added to the user''s profile or not):
+                    `true` the playlist will be public, `false` the playlist will
+                    be private. To be able to create private playlists, the user must
+                    have granted the `playlist-modify-private` [scope](/documentation/web-api/concepts/scopes/#list-of-scopes).
+                    For more about public/private status, see [Working with Playlists](/documentation/web-api/concepts/playlists)'
+                collaborative:
+                  type: boolean
+                  description: 'Defaults to `false`. If `true` the playlist will be
+                    collaborative. _**Note**: to create a collaborative playlist you
+                    must also set `public` to `false`. To create collaborative playlists
+                    you must have granted `playlist-modify-private` and `playlist-modify-public`
+                    [scopes](/documentation/web-api/concepts/scopes/#list-of-scopes).'
+                description:
+                  type: string
+                  description: value for playlist description as displayed in Spotify
+                    Clients and in the Web API.
+              example:
+                name: New Playlist
+                description: New playlist description
+                public: false
+            example:
+              name: New Playlist
+              description: New playlist description
+              public: false
+      responses:
+        '201': {}
+        '401': {}
+        '403': {}
+        '429': {}
+  /playlists/{playlist_id}/images:
+    get:
+      tags:
+      - Playlists
+      summary: Get Playlist Cover Image
+      description: Get the current image associated with a specific playlist.
+      operationId: get-playlist-cover
+      parameters:
+      - name: playlist_id
+        in: path
+        description: The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)
+          of the playlist.
+        required: true
+      responses:
+        '200': {}
+        '401': {}
+        '403': {}
+        '429': {}
+  /browse/new-releases:
+    get:
+      tags:
+      - Albums
+      summary: Get New Releases
+      description: Get a list of new album releases featured in Spotify (shown, for
+        example, on a Spotify player’s “Browse” tab).
+      operationId: get-new-releases
+      parameters:
+      - name: limit
+        in: query
+        description: 'The maximum number of items to return. Default: 20. Minimum:
+          1. Maximum: 50.'
+      - name: offset
+        in: query
+        description: 'The index of the first item to return. Default: 0 (the first
+          item). Use with limit to get the next set of items.'
+      responses:
+        '200': {}
+        '401': {}
+        '403': {}
+        '429': {}
+security:
+- apiKeyHeader: []
+- apiKeyQuery: []
+tags:
+- name: Albums
+- name: Artists
+- name: Audiobooks
+- name: Categories
+- name: Chapters
+- name: Episodes
+- name: Library
+- name: Genres
+- name: Markets
+- name: Player
+- name: Playlists
+- name: Search
+- name: Shows
+- name: Tracks
+- name: Users

@@ -4,3 +4,5 @@ curl --request GET 'https://api.spotify.com/v1/me' --header "Authorization: Bear
 
 
 #curl --request GET 'https://api.spotify.com/v1/me/playlists' --header "Authorization: Bearer ${SPOTIFY_API_KEY}"  | jq
+
+curl "https://api.setlist.fm/rest/1.0/search/setlists?countryCode=GB&lastUpdated=20260430120000&year=2026&p=1&artistMbid=e212efdf-98b2-4dce-92ed-62cfc1e29854" --header "x-api-key: 2b3e4c8e-1c9d-4a7b-9c0f-1cbbd8a0b1e5" | jq
