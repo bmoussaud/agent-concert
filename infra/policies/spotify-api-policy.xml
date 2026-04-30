@@ -5,6 +5,7 @@
    
         <trace source="spotify-api" severity="error">
             <message>@($"[Inbound Spotify API] {context.Request.Method} {context.Request.Url}")</message>
+            <metadata name="headers" value="@(string.Join(", ", context.Request.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}")))" />
             <metadata name="body" value="@(string.IsNullOrEmpty((string)context.Variables["rawRequestBody"]) ? "none" : (string)context.Variables["rawRequestBody"])" />
         </trace>
     </inbound>

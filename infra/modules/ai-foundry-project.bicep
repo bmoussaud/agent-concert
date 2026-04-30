@@ -98,10 +98,6 @@ resource project 'Microsoft.CognitiveServices/accounts/projects@2025-12-01' = {
         'Ocp-Apim-Subscription-Key': setlistfmSubscriptionKey
         }
       }
-      //metadata: {
-      //  ApiType: 'Other'
-      //  type: 'mcp'
-      //}
       metadata: {type: 'custom_MCP'}
     }
   }
@@ -136,6 +132,22 @@ resource project 'Microsoft.CognitiveServices/accounts/projects@2025-12-01' = {
         
       ]
       metadata: { type: 'custom_MCP' }
+    }
+  }
+
+  resource connectionApiKeySpotifyMcp 'connections' = {
+    name: 'apikey-spotify-mcp-connection'
+    properties: {
+      category: 'RemoteTool'
+      target: spotifyMcpUrl
+      authType: 'CustomKeys'
+      isSharedToAll: true   
+      metadata: { type: 'custom_MCP' }
+      credentials: {
+        keys: {
+          Authorization: 'Basic TOBEDEFINED'
+        }
+      }
     }
   }
 }

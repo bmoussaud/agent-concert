@@ -1,7 +1,6 @@
 <policies>
   <inbound>
     <base />
-     
     <set-variable name="rawRequestBody" value="@(context.Request.Body.As<string>(preserveContent: true))" />
     <trace source="spotify-mcp" severity="error">
       <message>@($"[Inbound Spotify MCP] {context.Request.Method} {context.Request.Url}")</message>
@@ -13,8 +12,12 @@
   </backend>
   <outbound>
     <base />
+    <set-variable name="responseBody" value="@{
+            return context.Response.Body != null ? context.Response.Body.As<string>(preserveContent: true) : &quot;&quot;;
+        }" />
     <trace source="spotify-mcp" severity="error">
       <message>@($"[Outbound Spotify MCP] {context.Response.StatusCode} {context.Request.Method} {context.Request.Url}")</message>
+      <metadata name="Response.Body" value="@((context.Response.Body == null || String.IsNullOrEmpty((string)context.Variables[&quot;responseBody&quot;])) ? &quot;none&quot; : (string)context.Variables[&quot;responseBody&quot;])" />
     </trace>
   </outbound>
   <on-error>
